@@ -1,52 +1,76 @@
-import { useState } from 'react';
+import React, { useState, useContext } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 
 const Login = () => {
-  const [form, setForm] = useState({ email: '', password: '' });
+  const { login } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');
 
-  const handleChange = (e) =>
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleLogin = () => {
+    if (!email || !password) {
+      setMessage('Please enter both email and password.');
+      return;
+    }
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Login data:', form);
-    
+    const storedUser = JSON.parse(localStorage.getItem('cymanUser'));
+
+    if (
+      storedUser &&
+      storedUser.email === email &&
+      storedUser.password === password
+    ) {
+      login('cyman-auth-token');
+      setMessage('Login successful! Redirecting...');
+      setTimeout(() => navigate('/'), 1500);
+    } else {
+      setMessage('Incorrect email or password.');
+    }
   };
 
   return (
-    <div className="max-w-md mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-4 text-blue-600">Sign In</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-6">
+      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-6 text-center">Login to Cyman Wear</h2>
+
         <input
-          name="email"
           type="email"
-          required
           placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-          className="w-full border p-2 rounded"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="mb-4 w-full px-4 py-2 border rounded focus:outline-none focus:ring"
         />
+
         <input
-          name="password"
           type="password"
-          required
           placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-          className="w-full border p-2 rounded"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="mb-6 w-full px-4 py-2 border rounded focus:outline-none focus:ring"
         />
+
         <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+          onClick={handleLogin}
+          className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition"
         >
-          Login
+          Sign In
         </button>
-      </form>
-      <p className="mt-4 text-sm text-gray-600">
-        Don’t have an account?{' '}
-        <a href="/signup" className="text-blue-600 hover:underline">
-          Sign up
-        </a>
-      </p>
+
+        {message && (
+          <div className="mt-4 text-center text-sm text-green-600 animate-pulse">
+            {message}
+          </div>
+        )}
+
+        <div className="mt-6 text-sm text-center text-gray-600">
+          Not registered yet?{' '}
+          <Link to="/register" className="text-blue-600 hover:underline font-medium">
+            Create an account
+          </Link>
+        </div>
+      </div>
     </div>
   );
 };
