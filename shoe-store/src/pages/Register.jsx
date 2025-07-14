@@ -5,12 +5,14 @@ import { AuthContext } from '../context/AuthContext';
 const Register = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
+
   const [message, setMessage] = useState('');
 
   const handleChange = (e) => {
@@ -20,25 +22,41 @@ const Register = () => {
     }));
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     const { name, email, password, confirmPassword } = formData;
 
     if (!name || !email || !password || !confirmPassword) {
-      setMessage(' Please fill in all fields.');
+      setMessage('All fields are required.');
       return;
     }
 
     if (password !== confirmPassword) {
-      setMessage(' Passwords do not match.');
+      setMessage('Passwords do not match.');
       return;
     }
 
-    const userData = { name, email, password };
-    localStorage.setItem('cymanUser', JSON.stringify(userData));
+    try {
+      const response = await fetch('https://cymanwear-backend.com/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
 
-    login('cyman-auth-token');
-    setMessage('Registration successful! Redirecting...');
-    setTimeout(() => navigate('/'), 1500);
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('cymanUser', JSON.stringify({ name, email }));
+        login(data.token);
+        setMessage('Registered successfully! Redirecting...');
+        setTimeout(() => navigate('/'), 1500);
+      } else {
+        setMessage(`${data.message || 'Registration failed.'}`);
+      }
+    } catch (error) {
+      console.error(error);
+      setMessage(' Server error. Please try again later.');
+    }
   };
 
   return (
@@ -52,7 +70,7 @@ const Register = () => {
           placeholder="Full Name"
           value={formData.name}
           onChange={handleChange}
-          className="mb-4 w-full px-4 py-2 border rounded focus:outline-none focus:ring"
+          className="mb-4 w-full px-4 py-2 border rounded"
         />
 
         <input
@@ -61,7 +79,7 @@ const Register = () => {
           placeholder="Email"
           value={formData.email}
           onChange={handleChange}
-          className="mb-4 w-full px-4 py-2 border rounded focus:outline-none focus:ring"
+          className="mb-4 w-full px-4 py-2 border rounded"
         />
 
         <input
@@ -70,7 +88,7 @@ const Register = () => {
           placeholder="Password"
           value={formData.password}
           onChange={handleChange}
-          className="mb-4 w-full px-4 py-2 border rounded focus:outline-none focus:ring"
+          className="mb-4 w-full px-4 py-2 border rounded"
         />
 
         <input
@@ -79,28 +97,24 @@ const Register = () => {
           placeholder="Confirm Password"
           value={formData.confirmPassword}
           onChange={handleChange}
-          className="mb-6 w-full px-4 py-2 border rounded focus:outline-none focus:ring"
+          className="mb-6 w-full px-4 py-2 border rounded"
         />
 
         <button
           onClick={handleRegister}
-          className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition"
+          className="w-full bg-black text-white py-2 rounded hover:bg-gray-800"
         >
           Register
         </button>
 
-        {message && (
-          <div className="mt-4 text-center text-sm text-green-600 animate-pulse">
-            {message}
-          </div>
-        )}
+        {message && <p className="mt-4 text-center text-sm text-green-600">{message}</p>}
 
-        <div className="mt-6 text-sm text-center text-gray-600">
+        <p className="mt-6 text-sm text-center text-gray-600">
           Already have an account?{' '}
-          <Link to="/login" className="text-blue-600 hover:underline font-medium">
+          <Link to="/login" className="text-blue-600 hover:underline">
             Sign in
           </Link>
-        </div>
+        </p>
       </div>
     </div>
   );
