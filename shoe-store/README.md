@@ -1,12 +1,38 @@
-# React + Vite
+# Cyman Wear – Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Cyman Wear** is a modern, mobile-first e-commerce platform designed to showcase and sell trendy footwear online in Kenya. This is the **frontend** of the application, built using **React**, **Tailwind CSS**, and integrated with a Django REST API for backend services.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+##  Features
 
-## Expanding the ESLint configuration
+-  **JWT Authentication** (Login / Register)
+-  **Product Catalog** – List shoes by brand, category, size, price
+-  **Smart Filters & Search** – Filter shoes by size, price range, or type
+-  **Shopping Cart** – Add/remove items, view total, persistent cart
+-  **Wishlist/Favorites** – Save shoes for later
+-  **Order Tracking** – View past orders and status
+-  **Admin Dashboard** – Manage products, users, and orders
+-  **Responsive Design** – Fully optimized for mobile and tablet views
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## Tech Stack
+
+- **React 18+**
+- **Tailwind CSS**
+- **React Router DOM**
+- **Axios** (for API requests)
+- **JWT Tokens** (for frontend auth handling)
+- **LocalStorage** (for cart and token persistence)
+- **Vite** (for fast development)
+
+---
+
+## Getting Started
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/Manu-722/capstone-frontend.git
+cd capstone-frontend

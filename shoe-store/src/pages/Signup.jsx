@@ -75,4 +75,4 @@ const Signup = () => {
   );
 };
 
-export default Signup; // ✅ This is what fixes the error
+export default Signup; 
