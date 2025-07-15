@@ -1,40 +1,65 @@
-import { useState } from 'react';
-// import Sidebar from '../components/Sidebar';
-import ProductCard from '../components/ProductCard';
+import { useContext } from 'react';
+import { CartContext } from '../context/CartContext';
 
-const products = Array.from({ length: 20 }, (_, i) => ({
-  id: i + 1,
-  name: `Cyman Sneaker ${i + 1}`,
-  price: 100 + i * 5,
-  image: `/assets/shoe${i + 1}.jpg`,
-}));
+const products = [
+  {
+    id: 1,
+    name: 'Cyman Blaze Runner',
+    price: 1800,
+    image: 'https://your-image-url.com/shoe1.jpg',
+    description: 'Lightweight running shoes designed for speed and style.',
+  },
+  {
+    id: 2,
+    name: 'Cyman Drift Max',
+    price: 3000,
+    image: 'https://your-image-url.com/shoe2.jpg',
+    description: 'High-top sneakers with durable grip and urban design.',
+  },
+  {
+    id: 3,
+    name: 'Cyman Pulse Slide',
+    price: 2000,
+    image: '/src/assets/pexels-mstudio-360817-1240892.jpg',
+    description: 'Everyday comfort sandals with breathable sole.',
+  },
+  
+];
 
 const Shop = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const filtered = products.filter((p) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const { cart, setCart } = useContext(CartContext);
+
+  const addToCart = (product) => {
+    setCart([...cart, product]);
+  };
 
   return (
-    <div className="flex">
-      <Sidebar />
-      <main className="flex-1 p-6">
-        {/* Search bar */}
-        <input
-          type="text"
-          placeholder="Search sneakers..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full mb-6 p-3 border rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+    <div className="max-w-6xl mx-auto p-6">
+      <h2 className="text-3xl font-bold mb-6 text-center text-blue-700">Cyman Wear Shop</h2>
 
-        {/* Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filtered.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      </main>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {products.map((item) => (
+          <div
+            key={item.id}
+            className="bg-white border rounded shadow hover:shadow-lg transition p-4 flex flex-col"
+          >
+            <img
+              src={item.image}
+              alt={item.name}
+              className="h-48 object-cover rounded mb-4"
+            />
+            <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
+            <p className="text-sm text-gray-600 mb-2">{item.description}</p>
+            <p className="text-blue-700 font-bold text-md mb-3">${item.price.toFixed(2)}</p>
+            <button
+              onClick={() => addToCart(item)}
+              className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded mt-auto"
+            >
+              Add to Cart
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
