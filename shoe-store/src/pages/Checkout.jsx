@@ -45,21 +45,34 @@ const Checkout = () => {
     };
 
     try {
-      const response = await fetch('http://localhost:8000/api/checkout/', {
+      // Step 1: Save Order
+      const orderRes = await fetch('http://localhost:8000/api/checkout/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to place order');
+      if (!orderRes.ok) throw new Error('Failed to place order');
+
+      // Step 2: Trigger M-Pesa STK Push
+      const stkRes = await fetch('http://localhost:8000/api/initiate_stk_push/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, amount: total }),
+      });
+
+      const stkData = await stkRes.json();
+
+      if (stkData.ResponseCode === '0') {
+        toast.success('Order placed! Please check your phone to authorize M-Pesa payment.');
+        setCart([]);
+        localStorage.removeItem('cymanCart');
+        navigate('/thank-you');
+      } else {
+        console.error('STK Error:', stkData);
+        toast.error(stkData.ResponseDescription || 'Payment request failed.');
       }
 
-      setCart([]);
-      localStorage.removeItem('cymanCart');
-
-      toast.success('Order placed successfully!');
-      navigate('/thank-you');
     } catch (err) {
       console.error(err);
       toast.error('Something went wrong. Please try again.');
@@ -107,9 +120,7 @@ const Checkout = () => {
           <h3 className="text-lg font-semibold mb-2 text-gray-800">Order Summary</h3>
           {cart.map((item, index) => (
             <div key={index} className="flex justify-between text-sm text-gray-700 mb-1">
-              <span>
-                {item.name} × {item.quantity || 1}
-              </span>
+              <span>{item.name} × {item.quantity || 1}</span>
               <span>{formatKES(getItemTotal(item))}</span>
             </div>
           ))}
@@ -121,11 +132,9 @@ const Checkout = () => {
         <button
           type="submit"
           disabled={loading}
-          className={`mt-4 ${
-            loading ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'
-          } text-white font-semibold px-6 py-2 rounded`}
+          className={`mt-4 ${loading ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'} text-white font-semibold px-6 py-2 rounded`}
         >
-          {loading ? 'Placing Order...' : 'Place Order'}
+          {loading ? 'Processing...' : 'Place Order & Pay'}
         </button>
       </form>
     </div>
