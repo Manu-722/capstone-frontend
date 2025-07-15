@@ -36,26 +36,41 @@ const Register = () => {
     }
 
     try {
-      const response = await fetch('https://cymanwear-backend.com/api/register', {
+      // Register the user
+      const registerRes = await fetch('http://localhost:8000/api/auth/register/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ username: name, email, password }),
       });
 
-      const data = await response.json();
+      const registerData = await registerRes.json();
 
-      if (response.ok) {
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('cymanUser', JSON.stringify({ name, email }));
-        login(data.token);
-        setMessage('Registered successfully! Redirecting...');
-        setTimeout(() => navigate('/'), 1500);
+      if (registerRes.ok) {
+        // Now log them in
+        const loginRes = await fetch('http://localhost:8000/api/token/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: name, password }),
+        });
+
+        const loginData = await loginRes.json();
+
+        if (loginRes.ok) {
+          localStorage.setItem('authToken', loginData.access);
+          localStorage.setItem('refreshToken', loginData.refresh);
+          localStorage.setItem('cymanUser', JSON.stringify({ name, email }));
+          login(loginData.access); // context setter
+          setMessage('Registered successfully! Redirecting...');
+          setTimeout(() => navigate('/'), 1500);
+        } else {
+          setMessage('Registered, but login failed.');
+        }
       } else {
-        setMessage(`${data.message || 'Registration failed.'}`);
+        setMessage(registerData.error || 'Registration failed.');
       }
     } catch (error) {
       console.error(error);
-      setMessage(' Server error. Please try again later.');
+      setMessage('Server error. Please try again.');
     }
   };
 
@@ -67,12 +82,11 @@ const Register = () => {
         <input
           type="text"
           name="name"
-          placeholder="Full Name"
+          placeholder="Username"
           value={formData.name}
           onChange={handleChange}
           className="mb-4 w-full px-4 py-2 border rounded"
         />
-
         <input
           type="email"
           name="email"
@@ -81,7 +95,6 @@ const Register = () => {
           onChange={handleChange}
           className="mb-4 w-full px-4 py-2 border rounded"
         />
-
         <input
           type="password"
           name="password"
@@ -90,7 +103,6 @@ const Register = () => {
           onChange={handleChange}
           className="mb-4 w-full px-4 py-2 border rounded"
         />
-
         <input
           type="password"
           name="confirmPassword"
@@ -99,7 +111,6 @@ const Register = () => {
           onChange={handleChange}
           className="mb-6 w-full px-4 py-2 border rounded"
         />
-
         <button
           onClick={handleRegister}
           className="w-full bg-black text-white py-2 rounded hover:bg-gray-800"
@@ -111,9 +122,7 @@ const Register = () => {
 
         <p className="mt-6 text-sm text-center text-gray-600">
           Already have an account?{' '}
-          <Link to="/login" className="text-blue-600 hover:underline">
-            Sign in
-          </Link>
+          <Link to="/login" className="text-blue-600 hover:underline">Sign in</Link>
         </p>
       </div>
     </div>
