@@ -45,7 +45,7 @@ const Checkout = () => {
     };
 
     try {
-      const response = await fetch('/api/checkout', {
+      const response = await fetch('http://localhost:8000/api/checkout/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -55,7 +55,6 @@ const Checkout = () => {
         throw new Error('Failed to place order');
       }
 
-      // Optional: clear cart
       setCart([]);
       localStorage.removeItem('cymanCart');
 
