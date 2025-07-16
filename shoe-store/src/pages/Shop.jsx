@@ -26,7 +26,7 @@ const products = [
 ];
 
 const Shop = () => {
-  const { addToCart } = useContext(CartContext);
+  const { cart, setCart } = useContext(CartContext);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredProducts, setFilteredProducts] = useState(products);
 
@@ -46,11 +46,24 @@ const Shop = () => {
       minimumFractionDigits: 0,
     }).format(amount);
 
+  const addToCart = (product) => {
+    const existing = cart.find(item => item.id === product.id);
+
+    if (existing) {
+      const updatedCart = cart.map(item =>
+        item.id === product.id
+          ? { ...item, quantity: (item.quantity || 1) + 1 }
+          : item
+      );
+      setCart(updatedCart);
+    } else {
+      setCart([...cart, { ...product, quantity: 1 }]);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <h2 className="text-3xl font-bold mb-6 text-center text-blue-700">
-        Cyman Wear Shop
-      </h2>
+      <h2 className="text-3xl font-bold mb-6 text-blue-700 text-center">Cyman Wear Shop</h2>
 
       <input
         type="text"

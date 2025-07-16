@@ -14,6 +14,9 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  const getCartItemCount = () =>
+    cart.reduce((total, item) => total + (item.quantity || 1), 0);
+
   return (
     <nav className="bg-white shadow px-6 py-3 flex justify-between items-center">
       <Link to="/" className="text-xl font-bold text-blue-600">Cyman Wear</Link>
@@ -23,9 +26,9 @@ const Navbar = () => {
 
         <Link to="/cart" className="relative text-2xl text-gray-700 hover:text-blue-600">
           🛒
-          {cart.length > 0 && (
+          {getCartItemCount() > 0 && (
             <span className="absolute -top-2 -right-3 bg-red-600 text-white text-xs px-1 rounded-full">
-              {cart.length}
+              {getCartItemCount()}
             </span>
           )}
         </Link>
