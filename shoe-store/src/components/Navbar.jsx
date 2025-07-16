@@ -30,24 +30,32 @@ const Navbar = () => {
 
   return (
     <>
-      {/* Confirmation Overlay */}
+      {/* Stylish Logout Confirmation Overlay */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
-          <div className="bg-white rounded shadow p-6 w-80 text-center space-y-4 animate-fade-in">
-            <p className="text-gray-800 text-base font-medium">Are you sure you want to log out?</p>
-            <div className="flex justify-center gap-6">
-              <button
-                onClick={handleConfirmedLogout}
-                className="px-4 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
-              >
-                Yes
-              </button>
-              <button
-                onClick={() => setShowLogoutConfirm(false)}
-                className="px-4 py-1 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 text-sm"
-              >
-                Cancel
-              </button>
+        <div className="fixed inset-0 z-50">
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: "url('/src/assets/logout-bg.jpg')" }} // Replace with your actual image path
+          ></div>
+          <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="bg-white rounded shadow-lg p-6 w-80 text-center space-y-4">
+              <p className="text-gray-800 text-base font-medium">Are you sure you want to log out?</p>
+              <div className="flex justify-center gap-6">
+                <button
+                  onClick={handleConfirmedLogout}
+                  className="px-4 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                >
+                   Yes
+                </button>
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="px-4 py-1 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 text-sm"
+                >
+                   Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>

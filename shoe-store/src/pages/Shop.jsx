@@ -23,6 +23,70 @@ const products = [
     image: '/src/assets/pexels-mstudio-360817-1240892.jpg',
     description: 'Everyday comfort sandals with breathable sole.',
   },
+  {
+    id: 1,
+    name: 'Cyman Blaze Runner',
+    price: 1800,
+    image: '/src/assets/pexels-pixabay-267301.jpg',
+    description: 'Lightweight running shoes designed for speed and style.',
+  },
+  {
+    id: 2,
+    name: 'Cyman Drift Max',
+    price: 3000,
+    image: '/src/assets/pexels-mnzoutfits-1598505.jpg',
+    description: 'High-top sneakers with durable grip and urban design.',
+  },
+  {
+    id: 3,
+    name: 'Cyman Pulse Slide',
+    price: 2000,
+    image: '/src/assets/pexels-mstudio-360817-1240892.jpg',
+    description: 'Everyday comfort sandals with breathable sole.',
+  },
+  {
+    id: 1,
+    name: 'Cyman Blaze Runner',
+    price: 1800,
+    image: '/src/assets/pexels-pixabay-267301.jpg',
+    description: 'Lightweight running shoes designed for speed and style.',
+  },
+  {
+    id: 2,
+    name: 'Cyman Drift Max',
+    price: 3000,
+    image: '/src/assets/pexels-mnzoutfits-1598505.jpg',
+    description: 'High-top sneakers with durable grip and urban design.',
+  },
+  {
+    id: 3,
+    name: 'Cyman Pulse Slide',
+    price: 2000,
+    image: '/src/assets/pexels-mstudio-360817-1240892.jpg',
+    description: 'Everyday comfort sandals with breathable sole.',
+  },
+  {
+    id: 1,
+    name: 'Cyman Blaze Runner',
+    price: 1800,
+    image: '/src/assets/pexels-pixabay-267301.jpg',
+    description: 'Lightweight running shoes designed for speed and style.',
+  },
+  {
+    id: 2,
+    name: 'Cyman Drift Max',
+    price: 3000,
+    image: '/src/assets/pexels-mnzoutfits-1598505.jpg',
+    description: 'High-top sneakers with durable grip and urban design.',
+  },
+  {
+    id: 3,
+    name: 'Cyman Pulse Slide',
+    price: 2000,
+    image: '/src/assets/pexels-mstudio-360817-1240892.jpg',
+    description: 'Everyday comfort sandals with breathable sole.',
+  },
+
 ];
 
 const Shop = () => {
