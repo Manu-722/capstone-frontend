@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { CartContext } from '../context/CartContext';
 
 const products = [
@@ -27,6 +27,16 @@ const products = [
 
 const Shop = () => {
   const { addToCart } = useContext(CartContext);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredProducts, setFilteredProducts] = useState(products);
+
+  useEffect(() => {
+    const results = products.filter(item =>
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredProducts(results);
+  }, [searchTerm]);
 
   const formatKES = (amount) =>
     new Intl.NumberFormat('en-KE', {
@@ -42,31 +52,43 @@ const Shop = () => {
         Cyman Wear Shop
       </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.map((item) => (
-          <div
-            key={item.id}
-            className="bg-white border rounded shadow hover:shadow-lg transition p-4 flex flex-col"
-          >
-            <img
-              src={item.image || '/assets/shoes/default.jpg'}
-              alt={item.name}
-              className="h-48 w-full object-cover rounded mb-4"
-            />
-            <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
-            <p className="text-sm text-gray-600 mb-2">{item.description}</p>
-            <p className="text-green-700 font-bold text-md mb-3">
-              {formatKES(item.price)}
-            </p>
-            <button
-              onClick={() => addToCart(item)}
-              className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded mt-auto"
+      <input
+        type="text"
+        placeholder="Search products..."
+        value={searchTerm}
+        onChange={e => setSearchTerm(e.target.value)}
+        className="w-full md:w-1/2 mx-auto block mb-8 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+      />
+
+      {filteredProducts.length === 0 ? (
+        <p className="text-center text-gray-500">No products match your search.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {filteredProducts.map((item) => (
+            <div
+              key={item.id}
+              className="bg-white border rounded shadow hover:shadow-lg transition p-4 flex flex-col"
             >
-              Add to Cart
-            </button>
-          </div>
-        ))}
-      </div>
+              <img
+                src={item.image || '/assets/shoes/default.jpg'}
+                alt={item.name}
+                className="h-48 w-full object-cover rounded mb-4"
+              />
+              <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
+              <p className="text-sm text-gray-600 mb-2">{item.description}</p>
+              <p className="text-green-700 font-bold text-md mb-3">
+                {formatKES(item.price)}
+              </p>
+              <button
+                onClick={() => addToCart(item)}
+                className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded mt-auto"
+              >
+                Add to Cart
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
