@@ -5,10 +5,8 @@ import { AuthContext } from '../context/AuthContext';
 
 const Navbar = () => {
   const { cart, setCart } = useContext(CartContext);
-  const { isAuthenticated, logout } = useContext(AuthContext);
+  const { isAuthenticated, user, logout } = useContext(AuthContext); // updated
   const navigate = useNavigate();
-  const storedUser = localStorage.getItem('cymanUser');
-  const user = storedUser ? JSON.parse(storedUser) : null;
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const getCartItemCount = () =>
@@ -17,8 +15,7 @@ const Navbar = () => {
   const handleConfirmedLogout = () => {
     setCart([]);
     localStorage.removeItem('cymanCart');
-    localStorage.removeItem('cymanUser');
-    logout();
+    logout(); // rely on context
     setShowLogoutConfirm(false);
     navigate('/');
   };
@@ -38,9 +35,8 @@ const Navbar = () => {
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: "url('/src/assets/logout-bg.jpg')" }}
-          ></div>
-          <div className="absolute inset-0 bg-black bg-opacity-50"></div>
-
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-50" />
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="bg-white rounded shadow-lg p-6 w-80 text-center space-y-4">
               <p className="text-gray-800 text-base font-medium">
@@ -83,7 +79,7 @@ const Navbar = () => {
 
           {isAuthenticated && user ? (
             <>
-              <span className="text-sm text-gray-200">Welcome, {user.name}</span>
+              <span className="text-sm text-gray-200">Welcome, {user.username}</span>
               <button
                 onClick={() => setShowLogoutConfirm(true)}
                 className="text-red-500 hover:underline text-sm"
