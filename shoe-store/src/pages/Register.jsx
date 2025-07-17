@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { toast } from 'react-toastify';
 
 const Register = () => {
   const { login } = useContext(AuthContext);
@@ -12,8 +13,7 @@ const Register = () => {
     password: '',
     confirmPassword: '',
   });
-
-  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -26,17 +26,17 @@ const Register = () => {
     const { name, email, password, confirmPassword } = formData;
 
     if (!name || !email || !password || !confirmPassword) {
-      setMessage('All fields are required.');
+      toast.error('All fields are required');
       return;
     }
 
     if (password !== confirmPassword) {
-      setMessage('Passwords do not match.');
+      toast.error('Passwords do not match');
       return;
     }
 
+    setLoading(true);
     try {
-      // Register the user
       const registerRes = await fetch('http://localhost:8000/api/auth/register/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -46,7 +46,6 @@ const Register = () => {
       const registerData = await registerRes.json();
 
       if (registerRes.ok) {
-        // Now log them in
         const loginRes = await fetch('http://localhost:8000/api/token/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -59,25 +58,27 @@ const Register = () => {
           localStorage.setItem('authToken', loginData.access);
           localStorage.setItem('refreshToken', loginData.refresh);
           localStorage.setItem('cymanUser', JSON.stringify({ name, email }));
-          login(loginData.access); // context setter
-          setMessage('Registered successfully! Redirecting...');
+          login(loginData.access);
+          toast.success('Registered successfully! Redirecting...');
           setTimeout(() => navigate('/'), 1500);
         } else {
-          setMessage('Registered, but login failed.');
+          toast.error('Registered, but login failed');
         }
       } else {
-        setMessage(registerData.error || 'Registration failed.');
+        toast.error(registerData.error || 'Registration failed');
       }
     } catch (error) {
       console.error(error);
-      setMessage('Server error. Please try again.');
+      toast.error('Server error. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-6">
       <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center">Create Your Account</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center text-blue-700">Create Your Account</h2>
 
         <input
           type="text"
@@ -85,7 +86,7 @@ const Register = () => {
           placeholder="Username"
           value={formData.name}
           onChange={handleChange}
-          className="mb-4 w-full px-4 py-2 border rounded"
+          className="mb-4 w-full px-4 py-2 border rounded focus:ring-blue-500 focus:outline-none"
         />
         <input
           type="email"
@@ -93,7 +94,7 @@ const Register = () => {
           placeholder="Email"
           value={formData.email}
           onChange={handleChange}
-          className="mb-4 w-full px-4 py-2 border rounded"
+          className="mb-4 w-full px-4 py-2 border rounded focus:ring-blue-500 focus:outline-none"
         />
         <input
           type="password"
@@ -101,7 +102,7 @@ const Register = () => {
           placeholder="Password"
           value={formData.password}
           onChange={handleChange}
-          className="mb-4 w-full px-4 py-2 border rounded"
+          className="mb-4 w-full px-4 py-2 border rounded focus:ring-blue-500 focus:outline-none"
         />
         <input
           type="password"
@@ -109,16 +110,17 @@ const Register = () => {
           placeholder="Confirm Password"
           value={formData.confirmPassword}
           onChange={handleChange}
-          className="mb-6 w-full px-4 py-2 border rounded"
+          className="mb-6 w-full px-4 py-2 border rounded focus:ring-blue-500 focus:outline-none"
         />
         <button
           onClick={handleRegister}
-          className="w-full bg-black text-white py-2 rounded hover:bg-gray-800"
+          disabled={loading}
+          className={`w-full py-2 text-white font-semibold rounded transition ${
+            loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800'
+          }`}
         >
-          Register
+          {loading ? 'Registering...' : 'Register'}
         </button>
-
-        {message && <p className="mt-4 text-center text-sm text-green-600">{message}</p>}
 
         <p className="mt-6 text-sm text-center text-gray-600">
           Already have an account?{' '}

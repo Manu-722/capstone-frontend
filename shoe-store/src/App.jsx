@@ -16,7 +16,8 @@ import Register from './pages/Register';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import ThankYou from './pages/ThankYou';
-
+import RequestReset from './components/auth/RequestReset';
+import ResetPassword from './components/auth/ResetPassword';
 
 const App = () => (
   <CartProvider> 
@@ -32,8 +33,11 @@ const App = () => (
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/reset-password" element={<RequestReset />} />
+        <Route path="/reset/:uidb64/:token" element={<ResetPassword />} />
       </Routes>
       <Footer />
+      <ToastContainer position="top-center" autoClose={4000} />
     </Router>
   </CartProvider>
 );
