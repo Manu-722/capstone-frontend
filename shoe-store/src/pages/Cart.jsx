@@ -53,12 +53,12 @@ const Cart = () => {
               >
                 <img
                   src={`http://localhost:8000/media/${item.image}`}
-                  alt={item.name}
+                  alt={item.shoe}
                   className="w-32 h-32 object-cover rounded"
                 />
 
                 <div className="flex-1 w-full">
-                  <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
+                  <h3 className="text-lg font-semibold text-gray-800">{item.shoe}</h3>
                   <p className="text-sm text-gray-600 mb-2">
                     {item.description?.length > 60
                       ? `${item.description.slice(0, 60)}...`
@@ -67,12 +67,24 @@ const Cart = () => {
 
                   <p className="text-md text-gray-800 mb-1">
                     Price:{' '}
-                    <span className="line-through text-gray-500 mr-2">
-                      {formatKES(item.price)}
-                    </span>
-                    <span className="text-green-700 font-semibold">
-                      {formatKES(item.discounted ?? item.price)}
-                    </span>
+                    {item.discounted && item.discounted < item.price ? (
+                      <>
+                        <span className="line-through text-gray-500 mr-2">
+                          {formatKES(item.price)}
+                        </span>
+                        <span className="text-green-700 font-semibold">
+                          {formatKES(item.discounted)}
+                        </span>
+                        <span className="ml-2 text-sm text-red-600 font-medium">
+                          Save {formatKES(item.price - item.discounted)} (
+                          {Math.round((1 - item.discounted / item.price) * 100)}% off)
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-gray-800 font-semibold">
+                        {formatKES(item.price)}
+                      </span>
+                    )}
                   </p>
 
                   <div className="flex gap-2 items-center mt-2">
@@ -121,8 +133,7 @@ const Cart = () => {
             <Link
               to={{
                 pathname: '/checkout',
-                state: { paymentMethod }, // If you're using React Router v5
-                search: `?method=${paymentMethod}` // For v6 route-based handling
+                search: `?method=${paymentMethod}`,
               }}
             >
               <button className="mt-4 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">
