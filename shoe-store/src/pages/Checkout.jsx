@@ -6,7 +6,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import CardCheckoutForm from './CardCheckoutForm';
 
-const stripePromise = loadStripe('pk_test_YOUR_PUBLIC_KEY'); // replace with your real key
+const stripePromise = loadStripe('pk_test_51Rll5GR31F13pFA0W8yyMJy7zawbfLBRIBjeGCYyiPeu4efcp21c7KOfiDZ8ojL5MPVui41VLSMCheVAQ5krb9Lv00zt7Mk4ez'); 
 
 const Checkout = () => {
   const { cart, setCart } = useContext(CartContext);
@@ -39,7 +39,7 @@ const Checkout = () => {
 
   const handleOrderSubmit = async (e) => {
     e.preventDefault();
-    if (paymentMethod === 'card') return; // Card handled separately
+    if (paymentMethod === 'card') return;
     setLoading(true);
 
     const payload = {
@@ -93,9 +93,10 @@ const Checkout = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h2 className="text-3xl font-bold mb-4 text-center text-blue-700">Checkout</h2>
+      <h2 className="text-3xl font-bold mb-6 text-center text-blue-700">Checkout</h2>
 
-      <form onSubmit={handleOrderSubmit} className="space-y-4">
+      <form onSubmit={paymentMethod === 'mpesa' ? handleOrderSubmit : undefined} className="space-y-4">
+        {/* Full Name */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Full Name</label>
           <input
@@ -106,16 +107,22 @@ const Checkout = () => {
             className="mt-1 block w-full border border-gray-300 rounded px-3 py-2"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Phone Number</label>
-          <input
-            type="tel"
-            required={paymentMethod === 'mpesa'}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="mt-1 block w-full border border-gray-300 rounded px-3 py-2"
-          />
-        </div>
+
+        {/* Phone for M-Pesa only */}
+        {paymentMethod === 'mpesa' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+            <input
+              type="tel"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="mt-1 block w-full border border-gray-300 rounded px-3 py-2"
+            />
+          </div>
+        )}
+
+        {/* Delivery Address */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Delivery Address</label>
           <textarea
@@ -123,9 +130,10 @@ const Checkout = () => {
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             className="mt-1 block w-full border border-gray-300 rounded px-3 py-2"
-          ></textarea>
+          />
         </div>
 
+        {/* Payment Method Select */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Payment Method</label>
           <select
@@ -157,18 +165,20 @@ const Checkout = () => {
           <button
             type="submit"
             disabled={loading}
-            className={`mt-4 ${loading ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'} text-white font-semibold px-6 py-2 rounded`}
+            className={`mt-4 w-full ${loading ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'} text-white font-semibold px-6 py-2 rounded`}
           >
             {loading ? 'Processing...' : 'Place Order & Pay with M-Pesa'}
           </button>
         )}
       </form>
 
-      {/* Stripe Card Component */}
+      {/* Stripe Card Form */}
       {paymentMethod === 'card' && (
-        <Elements stripe={stripePromise}>
-          <CardCheckoutForm amount={total} onSuccess={handleCardSuccess} />
-        </Elements>
+        <div className="mt-6">
+          <Elements stripe={stripePromise}>
+            <CardCheckoutForm amount={total} onSuccess={handleCardSuccess} />
+          </Elements>
+        </div>
       )}
     </div>
   );

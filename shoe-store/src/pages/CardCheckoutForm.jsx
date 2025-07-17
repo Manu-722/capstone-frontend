@@ -5,86 +5,62 @@ import { toast } from 'react-toastify';
 const CardCheckoutForm = ({ amount, onSuccess }) => {
   const stripe = useStripe();
   const elements = useElements();
+
   const [loading, setLoading] = useState(false);
 
-  const handleCardSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!stripe || !elements) {
-      toast.error('Stripe is not ready. Please try again shortly.');
-      return;
-    }
+    if (!stripe || !elements) return;
 
     setLoading(true);
 
     try {
-      // Create payment method from card input
-      const { error, paymentMethod } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: elements.getElement(CardElement),
-      });
-
-      if (error) {
-        toast.error(error.message || 'Card setup failed');
-        setLoading(false);
-        return;
-      }
-
-      // Request PaymentIntent from backend
-      const res = await fetch('http://localhost:8000/api/create-payment-intent/', {
+      
+      const intentRes = await fetch('http://localhost:8000/api/create-payment-intent/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount }),
       });
 
-      const data = await res.json();
+      const { clientSecret } = await intentRes.json();
+      if (!clientSecret) throw new Error('Missing client secret');
 
-      if (!data.clientSecret) {
-        toast.error('Failed to create payment intent');
-        setLoading(false);
-        return;
-      }
-
-      // Confirm payment with clientSecret
-      const confirmRes = await stripe.confirmCardPayment(data.clientSecret, {
-        payment_method: paymentMethod.id,
+      
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement),
+        },
       });
 
-      if (confirmRes.paymentIntent.status === 'succeeded') {
-        // Log successful transaction to backend
-        await fetch('http://localhost:8000/api/confirm-card-payment/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            intent_id: confirmRes.paymentIntent.id,
-            amount,
-          }),
-        });
-
-        toast.success('Card payment successful!');
-        onSuccess(); // Clear cart, redirect, etc.
+      if (result.error) {
+        toast.error(result.error.message);
+      } else if (result.paymentIntent.status === 'succeeded') {
+        toast.success('Payment successful!');
+        onSuccess(); 
       } else {
-        toast.error('Card payment failed');
-        console.error('Payment failed:', confirmRes);
+        toast.error('Payment failed or incomplete.');
       }
     } catch (err) {
       console.error(err);
-      toast.error('Something went wrong during card payment');
+      toast.error('Something went wrong with Stripe.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleCardSubmit} className="space-y-4 mt-4">
-      <CardElement className="border p-3 rounded-md bg-white" />
+    <form onSubmit={handleSubmit} className="space-y-4 max-w-xl mx-auto p-4 border rounded shadow">
+      <label className="block text-sm font-medium text-gray-700 mb-1">Card Information</label>
+      <div className="border p-2 rounded bg-white">
+        <CardElement options={{ hidePostalCode: true }} />
+      </div>
+
       <button
         type="submit"
-        disabled={loading}
-        className={`w-full bg-blue-600 text-white font-semibold px-4 py-2 rounded ${
-          loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
-        }`}
+        disabled={!stripe || loading}
+        className={`w-full mt-4 ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'} text-white font-semibold px-6 py-2 rounded`}
       >
-        {loading ? 'Processing Payment...' : 'Pay by Card'}
+        {loading ? 'Processing Payment...' : 'Pay Now'}
       </button>
     </form>
   );
