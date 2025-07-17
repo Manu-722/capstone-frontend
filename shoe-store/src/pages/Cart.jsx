@@ -1,125 +1,136 @@
-import React, { useContext, useEffect } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import React, { useContext, useState } from 'react';
 import { CartContext } from '../context/CartContext';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const Cart = () => {
-  const { isAuthenticated } = useContext(AuthContext);
   const { cart, setCart } = useContext(CartContext);
-  const navigate = useNavigate();
-
-  // Persist cart on every change
-  useEffect(() => {
-    localStorage.setItem('cymanCart', JSON.stringify(cart));
-  }, [cart]);
+  const [paymentMethod, setPaymentMethod] = useState('mpesa');
 
   const formatKES = (amount) =>
     new Intl.NumberFormat('en-KE', {
       style: 'currency',
       currency: 'KES',
-      currencyDisplay: 'symbol',
       minimumFractionDigits: 0,
     }).format(amount);
 
-  const totalQuantity = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-  const discountRate = totalQuantity >= 2 ? 0.07 : 0;
-
-  const getItemBaseTotal = (item) => {
-    const price = Number(item.price);
-    const quantity = Number(item.quantity || 1);
-    return isNaN(price) ? 0 : price * quantity;
-  };
-
-  const getItemDiscount = (item) => getItemBaseTotal(item) * discountRate;
-  const getItemFinalTotal = (item) => getItemBaseTotal(item) - getItemDiscount(item);
-
-  const subtotal = cart.reduce((sum, item) => sum + getItemBaseTotal(item), 0);
-  const totalDiscount = cart.reduce((sum, item) => sum + getItemDiscount(item), 0);
-  const total = subtotal - totalDiscount;
-
   const removeItem = (id) => {
-    const confirmDelete = window.confirm('Remove this item from your cart?');
-    if (confirmDelete) {
-      const updated = cart.filter((item) => item.id !== id);
-      setCart(updated);
-    }
+    setCart(cart.filter(item => item.id !== id));
   };
+
+  const incrementQty = (id) => {
+    setCart(cart.map(item =>
+      item.id === id ? { ...item, quantity: item.quantity + 1 } : item
+    ));
+  };
+
+  const decrementQty = (id) => {
+    setCart(cart.map(item =>
+      item.id === id && item.quantity > 1
+        ? { ...item, quantity: item.quantity - 1 }
+        : item
+    ));
+  };
+
+  const subtotal = cart.reduce(
+    (sum, item) =>
+      sum + (item.discounted ?? item.price) * (item.quantity || 1),
+    0
+  );
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6">Your Cart</h2>
+    <div className="max-w-5xl mx-auto p-6">
+      <h2 className="text-3xl font-bold text-center mb-6 text-red-600">Your Cart 🛒</h2>
 
       {cart.length === 0 ? (
-        <p className="text-gray-700">Your cart is empty.</p>
+        <p className="text-center text-gray-500">Your cart is empty.</p>
       ) : (
-        <div className="space-y-4">
-          {cart.map((item, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between bg-white p-4 rounded shadow"
-            >
-              <img
-                src={item.imageUrl || item.image || '/assets/shoes/default.jpg'}
-                alt={item.name}
-                className="w-24 h-24 object-cover rounded mr-4"
-              />
-              <div className="flex-1">
-                <h3 className="font-semibold text-lg text-gray-800">{item.name}</h3>
-                <p className="text-sm text-gray-600">{item.description}</p>
-                <p className="text-sm text-gray-600">Qty: {item.quantity || 1}</p>
-                <button
-                  onClick={() => removeItem(item.id)}
-                  className="mt-2 text-red-600 text-sm hover:underline"
-                >
-                  Remove
-                </button>
-              </div>
-              <div className="text-right">
-                {discountRate > 0 ? (
-                  <>
-                    <p className="text-sm text-gray-500 line-through">
-                      {formatKES(getItemBaseTotal(item))}
-                    </p>
-                    <p className="text-lg font-bold text-green-700 whitespace-nowrap">
-                      {formatKES(getItemFinalTotal(item))}
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-lg font-bold text-green-700 whitespace-nowrap">
-                    {formatKES(getItemBaseTotal(item))}
-                  </p>
-                )}
-              </div>
-            </div>
-          ))}
+        <>
+          <div className="space-y-6">
+            {cart.map((item) => (
+              <div
+                key={item.id}
+                className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-white border shadow rounded-lg"
+              >
+                <img
+                  src={`http://localhost:8000/media/${item.image}`}
+                  alt={item.name}
+                  className="w-32 h-32 object-cover rounded"
+                />
 
-          <div className="mt-8 border-t pt-6 text-right space-y-1">
-            <p className="text-gray-800 font-medium">
+                <div className="flex-1 w-full">
+                  <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
+                  <p className="text-sm text-gray-600 mb-2">
+                    {item.description?.length > 60
+                      ? `${item.description.slice(0, 60)}...`
+                      : item.description}
+                  </p>
+
+                  <p className="text-md text-gray-800 mb-1">
+                    Price:{' '}
+                    <span className="line-through text-gray-500 mr-2">
+                      {formatKES(item.price)}
+                    </span>
+                    <span className="text-green-700 font-semibold">
+                      {formatKES(item.discounted ?? item.price)}
+                    </span>
+                  </p>
+
+                  <div className="flex gap-2 items-center mt-2">
+                    <button
+                      onClick={() => decrementQty(item.id)}
+                      className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                    >
+                      −
+                    </button>
+                    <span className="font-medium">{item.quantity}</span>
+                    <button
+                      onClick={() => incrementQty(item.id)}
+                      className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                    >
+                      +
+                    </button>
+                    <button
+                      onClick={() => removeItem(item.id)}
+                      className="ml-auto text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 space-y-4 text-right">
+            <p className="text-xl font-bold text-gray-800">
               Subtotal: {formatKES(subtotal)}
             </p>
-            {totalDiscount > 0 && (
-              <p className="text-green-600 font-medium">
-                Discount (7%): –{formatKES(totalDiscount)}
-              </p>
-            )}
-            <p className="text-xl font-bold text-blue-800">
-              Total: {formatKES(total)}
-            </p>
 
-            {isAuthenticated ? (
-              <button
-                onClick={() => navigate('/checkout')}
-                className="mt-4 bg-blue-600 text-white font-semibold px-6 py-2 rounded hover:bg-blue-700"
+            <div className="text-left">
+              <label className="block mb-1 font-semibold">Payment Method:</label>
+              <select
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="border px-4 py-2 rounded w-full sm:w-1/2"
               >
+                <option value="mpesa">M-Pesa</option>
+                <option value="card">Card</option>
+              </select>
+            </div>
+
+            <Link
+              to={{
+                pathname: '/checkout',
+                state: { paymentMethod }, // If you're using React Router v5
+                search: `?method=${paymentMethod}` // For v6 route-based handling
+              }}
+            >
+              <button className="mt-4 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">
                 Proceed to Checkout
               </button>
-            ) : (
-              <p className="text-sm text-gray-500 italic mt-2">
-                Please log in to proceed to checkout.
-              </p>
-            )}
+            </Link>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
