@@ -18,6 +18,8 @@ import Checkout from './pages/Checkout';
 import ThankYou from './pages/ThankYou';
 import RequestReset from './components/auth/RequestReset';
 import ResetPassword from './components/auth/ResetPassword';
+import AdminDashboard from './admin/AdminDashboard';
+
 
 const App = () => (
   <CartProvider> 
@@ -29,6 +31,8 @@ const App = () => (
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/thank-you" element={<ThankYou />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+
 
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
