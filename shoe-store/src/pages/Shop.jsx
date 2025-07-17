@@ -23,7 +23,70 @@ const rawProducts = [
     image: '/src/assets/pexels-mstudio-360817-1240892.jpg',
     description: 'Everyday comfort sandals with breathable sole.',
   },
-  // Repeated entries removed for uniqueness
+   {
+    id: 4,
+    name: 'Cyman Blaze Runner',
+    price: 1800,
+    image: '/src/assets/pexels-pixabay-267301.jpg',
+    description: 'Lightweight running shoes designed for speed and style.',
+  },
+  {
+    id: 5,
+    name: 'Cyman Drift Max',
+    price: 3000,
+    image: '/src/assets/shoe1.jpg',
+    description: 'High-top sneakers with durable grip and urban design.',
+  },
+  {
+    id: 6,
+    name: 'Cyman Pulse',
+    price: 2000,
+    image: '/src/assets/pexels-tima-miroshnichenko-6765524.jpg',
+    description: 'Everyday comfort sandals with breathable sole.',
+  },
+   {
+    id: 7,
+    name: 'Cyman Runner',
+    price: 1800,
+    image: '/src/assets/pexels-pixabay-267301.jpg',
+    description: 'Lightweight running shoes designed for speed and style.',
+  },
+  {
+    id: 8,
+    name: 'Drift ',
+    price: 3000,
+    image: '/src/assets/pexels-solliefoto-298863.jpg',
+    description: 'High-top sneakers with durable grip and urban design.',
+  },
+  {
+    id: 9,
+    name: 'Slide',
+    price: 2000,
+    image: '/src/assets/pexels-pixabay-267280.jpg',
+    description: 'Everyday comfort sandals with breathable sole.',
+  },
+   {
+    id: 10,
+    name: 'Cyman Blaze Runner',
+    price: 1800,
+    image: '/src/assets/pexels-nytheone-1070360.jpg',
+    description: 'Lightweight running shoes designed for speed and style.',
+  },
+  {
+    id: 11,
+    name: 'Cyman Official',
+    price: 3000,
+    image: '/src/assets/pexels-mnzoutfits-1598508.jpg',
+    description: 'High-top sneakers with durable grip and urban design.',
+  },
+  {
+    id: 12,
+    name: 'Cyman Slide',
+    price: 2000,
+    image: '/src/assets/pexels-duncanoluwaseun-186035.jpg',
+    description: 'Everyday comfort sandals with breathable sole.',
+  },
+  
 ];
 
 // Ensure products are unique by name (you could use 'id' if they're guaranteed unique)
