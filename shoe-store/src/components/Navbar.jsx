@@ -2,7 +2,7 @@ import { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
-import { useSelector } from 'react-redux'; // 💖 Add Redux hook
+import { useSelector } from 'react-redux'; // 💖 Wishlist badge access
 
 const Navbar = () => {
   const { cart, setCart } = useContext(CartContext);
@@ -10,7 +10,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const wishlistCount = useSelector((state) => state.wishlist?.items?.length || 0); // 💖 Get wishlist count
+  const wishlistCount = useSelector((state) => state.wishlist?.items?.length || 0);
 
   const getCartItemCount = () =>
     cart.reduce((total, item) => total + (item.quantity || 1), 0);
@@ -32,6 +32,7 @@ const Navbar = () => {
 
   return (
     <>
+      {/* 🔒 Logout Confirmation Overlay */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-50">
           <div
@@ -63,6 +64,7 @@ const Navbar = () => {
         </div>
       )}
 
+      {/* 🛒 Main Navigation Bar */}
       <nav className="bg-black shadow px-6 py-3 flex justify-between items-center relative z-40">
         <Link to="/" className="text-xl font-bold text-red-500">Cyman Wear</Link>
 
@@ -80,10 +82,10 @@ const Navbar = () => {
 
           {/* 💖 Wishlist Link */}
           {isAuthenticated && (
-            <Link to="/wishlist" className="relative text-red-500 hover:text-pink-500 text-sm">
+            <Link to="/wishlist" className="relative text-red-500 hover:text-red-500 text-sm">
               Wishlist
               {wishlistCount > 0 && (
-                <span className="absolute -top-2 -right-5 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs px-1 rounded-full">
                   {wishlistCount}
                 </span>
               )}

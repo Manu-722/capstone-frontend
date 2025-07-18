@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-// 🚀 Load wishlist from Django
+// Load wishlist
 export const fetchWishlist = createAsyncThunk('wishlist/fetch', async (_, { getState }) => {
   const token = getState().auth?.token || localStorage.getItem('authToken');
   const res = await fetch('http://localhost:8000/api/wishlist/', {
@@ -10,7 +10,7 @@ export const fetchWishlist = createAsyncThunk('wishlist/fetch', async (_, { getS
   return data.items || [];
 });
 
-// ➕ Add to wishlist
+// Add item
 export const addWishlistItem = createAsyncThunk('wishlist/add', async (item, { getState }) => {
   const token = getState().auth?.token || localStorage.getItem('authToken');
   await fetch('http://localhost:8000/api/wishlist/add/', {
@@ -24,7 +24,7 @@ export const addWishlistItem = createAsyncThunk('wishlist/add', async (item, { g
   return item;
 });
 
-// ❌ Remove from wishlist
+// Remove item
 export const removeWishlistItem = createAsyncThunk('wishlist/remove', async (itemId, { getState }) => {
   const token = getState().auth?.token || localStorage.getItem('authToken');
   await fetch(`http://localhost:8000/api/wishlist/remove/${itemId}/`, {

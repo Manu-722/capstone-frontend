@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addToCart } from '../redux/cartSlice';
 import { clearWishlist, removeWishlistItem } from '../redux/wishlistSlice';
+import { CartContext } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
@@ -10,10 +10,32 @@ const Wishlist = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handleMoveToCart = (item) => {
-    dispatch(addToCart(item));
-    dispatch(clearWishlist()); // 💥 Clears entire wishlist
-    toast.success(`"${item.name}" moved to cart 🛒`);
+  const { cart, setCart } = useContext(CartContext);
+
+  const handleMoveAllToCart = () => {
+    const updatedCart = [...cart];
+
+    wishlist.forEach((item) => {
+      const exists = updatedCart.find((prod) => prod.id === item.id);
+      if (exists) {
+        const updatedItem = {
+          ...exists,
+          quantity: (exists.quantity || 1) + 1,
+        };
+        const index = updatedCart.findIndex((prod) => prod.id === item.id);
+        updatedCart[index] = updatedItem;
+      } else {
+        updatedCart.push({
+          ...item,
+          quantity: 1,
+          imageUrl: item.image || '/assets/shoes/default.jpg',
+        });
+      }
+    });
+
+    setCart(updatedCart);
+    dispatch(clearWishlist());
+    toast.success('All items moved to cart 🛒');
     navigate('/cart');
   };
 
@@ -22,17 +44,10 @@ const Wishlist = () => {
     toast.info('Removed from wishlist');
   };
 
-  const handleMoveAllToCart = () => {
-    wishlist.forEach((item) => dispatch(addToCart(item)));
-    dispatch(clearWishlist());
-    toast.success('Moved all to cart!');
-    navigate('/cart');
-  };
-
   return (
     <div className="max-w-5xl mx-auto p-6">
-      <h2 className="text-3xl font-bold text-center mb-6 text-pink-600">
-        Your Wishlist 💖
+      <h2 className="text-3xl font-bold text-center mb-6 text-red-500">
+        Your Wishlist ❤️
       </h2>
 
       {wishlist.length === 0 ? (
@@ -42,7 +57,7 @@ const Wishlist = () => {
           <div className="flex justify-end mb-4">
             <button
               onClick={handleMoveAllToCart}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
             >
               🛒 Move All to Cart
             </button>
@@ -65,12 +80,12 @@ const Wishlist = () => {
                   </h3>
                   <p className="text-gray-600 mb-2">{item.description}</p>
                   <div className="flex gap-4 items-center mt-2">
-                    <span className="text-green-700 font-bold text-lg">
+                    <span className="text-red-600 font-bold text-lg">
                       KES {item.discounted ?? item.price}
                     </span>
                     <button
-                      onClick={() => handleMoveToCart(item)}
-                      className="text-sm bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700"
+                      onClick={handleMoveAllToCart}
+                      className="text-sm bg-red-600 text-white px-4 py-1 rounded hover:bg-red-700"
                     >
                       Move to Cart
                     </button>
