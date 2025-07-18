@@ -1,16 +1,25 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { CartContext } from '../context/CartContext';
+import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import CardCheckoutForm from './CardCheckoutForm';
 
-const stripePromise = loadStripe('pk_test_51Rll5GR31F13pFA0W8yyMJy7zawbfLBRIBjeGCYyiPeu4efcp21c7KOfiDZ8ojL5MPVui41VLSMCheVAQ5krb9Lv00zt7Mk4ez'); 
+const stripePromise = loadStripe('pk_test_51Rll5GR31F13pFA0W8yyMJy7zawbfLBRIBjeGCYyiPeu4efcp21c7KOfiDZ8ojL5MPVui41VLSMCheVAQ5krb9Lv00zt7Mk4ez');
 
 const Checkout = () => {
   const { cart, setCart } = useContext(CartContext);
+  const { isAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast.info('Please login to continue to checkout.');
+      navigate('/login');
+    }
+  }, [isAuthenticated, navigate]);
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -22,9 +31,9 @@ const Checkout = () => {
   const discountRate = totalQuantity >= 2 ? 0.07 : 0;
 
   const getItemTotal = (item) => {
-    const price = Number(item.price);
-    const quantity = Number(item.quantity || 1);
-    const baseTotal = isNaN(price) ? 0 : price * quantity;
+    const price = Number(item.price) || 0;
+    const quantity = Number(item.quantity) || 1;
+    const baseTotal = price * quantity;
     return baseTotal - baseTotal * discountRate;
   };
 
@@ -37,9 +46,15 @@ const Checkout = () => {
 
   const total = cart.reduce((sum, item) => sum + getItemTotal(item), 0);
 
+  const cleanUp = () => {
+    setCart([]);
+    localStorage.removeItem('cymanCart');
+  };
+
   const handleOrderSubmit = async (e) => {
     e.preventDefault();
     if (paymentMethod === 'card') return;
+
     setLoading(true);
 
     const payload = {
@@ -70,8 +85,7 @@ const Checkout = () => {
 
       if (stkData.ResponseCode === '0') {
         toast.success('Order placed! M-Pesa prompt sent to your phone.');
-        setCart([]);
-        localStorage.removeItem('cymanCart');
+        cleanUp();
         navigate('/thank-you');
       } else {
         toast.error(stkData.ResponseDescription || 'M-Pesa payment failed.');
@@ -86,8 +100,7 @@ const Checkout = () => {
 
   const handleCardSuccess = () => {
     toast.success('Card payment successful!');
-    setCart([]);
-    localStorage.removeItem('cymanCart');
+    cleanUp();
     navigate('/thank-you');
   };
 
@@ -96,7 +109,6 @@ const Checkout = () => {
       <h2 className="text-3xl font-bold mb-6 text-center text-blue-700">Checkout</h2>
 
       <form onSubmit={paymentMethod === 'mpesa' ? handleOrderSubmit : undefined} className="space-y-4">
-        {/* Full Name */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Full Name</label>
           <input
@@ -108,7 +120,6 @@ const Checkout = () => {
           />
         </div>
 
-        {/* Phone for M-Pesa only */}
         {paymentMethod === 'mpesa' && (
           <div>
             <label className="block text-sm font-medium text-gray-700">Phone Number</label>
@@ -122,7 +133,6 @@ const Checkout = () => {
           </div>
         )}
 
-        {/* Delivery Address */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Delivery Address</label>
           <textarea
@@ -133,7 +143,6 @@ const Checkout = () => {
           />
         </div>
 
-        {/* Payment Method Select */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Payment Method</label>
           <select
@@ -146,7 +155,6 @@ const Checkout = () => {
           </select>
         </div>
 
-        {/* Order Summary */}
         <div className="border-t pt-4 mt-6">
           <h3 className="text-lg font-semibold mb-2 text-gray-800">Order Summary</h3>
           {cart.map((item, index) => (
@@ -160,19 +168,19 @@ const Checkout = () => {
           </p>
         </div>
 
-        {/* M-Pesa Submit Button */}
         {paymentMethod === 'mpesa' && (
           <button
             type="submit"
             disabled={loading}
-            className={`mt-4 w-full ${loading ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'} text-white font-semibold px-6 py-2 rounded`}
+            className={`mt-4 w-full ${
+              loading ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'
+            } text-white font-semibold px-6 py-2 rounded`}
           >
             {loading ? 'Processing...' : 'Place Order & Pay with M-Pesa'}
           </button>
         )}
       </form>
 
-      {/* Stripe Card Form */}
       {paymentMethod === 'card' && (
         <div className="mt-6">
           <Elements stripe={stripePromise}>

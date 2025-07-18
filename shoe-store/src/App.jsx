@@ -1,5 +1,11 @@
 import React, { useEffect, useContext } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -25,10 +31,10 @@ const AppRoutes = () => {
   const { setCart } = useContext(CartContext);
 
   useEffect(() => {
-    const fetchCart = async () => {
-      const token = localStorage.getItem('authToken');
-      if (!token) return;
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
 
+    const fetchCart = async () => {
       try {
         const res = await fetch('http://localhost:8000/api/cart/', {
           headers: { Authorization: `Bearer ${token}` },
@@ -43,11 +49,11 @@ const AppRoutes = () => {
       }
     };
 
-    if (isAuthenticated) fetchCart();
+    fetchCart();
   }, [isAuthenticated, setCart]);
 
   return (
-    <Router>
+    <>
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -64,13 +70,15 @@ const AppRoutes = () => {
       </Routes>
       <Footer />
       <ToastContainer position="top-center" autoClose={4000} />
-    </Router>
+    </>
   );
 };
 
 const App = () => (
   <CartProvider>
-    <AppRoutes />
+    <Router>
+      <AppRoutes />
+    </Router>
   </CartProvider>
 );
 
