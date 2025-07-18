@@ -6,7 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useSelector, useDispatch, Provider } from 'react-redux';
 import store from './redux/store';
 import { fetchCartFromServer, persistCartToServer } from './redux/cartSlice';
-import { fetchWishlist } from './redux/wishlistSlice'; // 💖 Import wishlist sync
+import { fetchWishlist } from './redux/wishlistSlice';
 
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -25,24 +25,24 @@ import Wishlist from './pages/Wishlist';
 
 const PrivateRoute = ({ children }) => {
   const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated);
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  const token = useSelector((state) => state.auth?.token) || localStorage.getItem('authToken');
+
+  return (isAuthenticated || !!token) ? children : <Navigate to="/login" />;
 };
 
 const AppRoutes = () => {
   const dispatch = useDispatch();
   const token = useSelector((state) => state.auth?.token) || localStorage.getItem('authToken');
-  const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated);
+  const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated || !!token);
   const cart = useSelector((state) => state.cart.items);
 
-  // 🧠 Load cart and wishlist from Django on login
   useEffect(() => {
     if (isAuthenticated && token) {
       dispatch(fetchCartFromServer());
-      dispatch(fetchWishlist()); // 💖 Load wishlist after login
+      dispatch(fetchWishlist());
     }
   }, [isAuthenticated, token, dispatch]);
 
-  // 💾 Persist cart changes to backend
   useEffect(() => {
     if (isAuthenticated && token && cart.length > 0) {
       dispatch(persistCartToServer());

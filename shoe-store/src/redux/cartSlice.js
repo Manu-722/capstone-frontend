@@ -1,19 +1,22 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 // 🧠 Load cart from Django profile
-export const fetchCartFromServer = createAsyncThunk('cart/fetch', async (_, { getState }) => {
+export const fetchCartFromServer = createAsyncThunk('cart/fetchCart', async (_, { getState }) => {
   const token = getState().auth?.token || localStorage.getItem('authToken');
   const res = await fetch('http://localhost:8000/api/user/cart/', {
     headers: { Authorization: `Bearer ${token}` },
   });
+
+  if (!res.ok) throw new Error('Failed to fetch cart');
   const data = await res.json();
-  return data.items;
+  return data.items || [];
 });
 
 // 💾 Save cart to Django profile
-export const persistCartToServer = createAsyncThunk('cart/persist', async (_, { getState }) => {
+export const persistCartToServer = createAsyncThunk('cart/persistCart', async (_, { getState }) => {
   const cart = getState().cart.items;
   const token = getState().auth?.token || localStorage.getItem('authToken');
+
   await fetch('http://localhost:8000/api/persist_cart/', {
     method: 'POST',
     headers: {
@@ -24,8 +27,19 @@ export const persistCartToServer = createAsyncThunk('cart/persist', async (_, { 
   });
 });
 
+// 🛡️ Safe localStorage parse
+const loadLocalCart = () => {
+  try {
+    const raw = localStorage.getItem('cymanCart');
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    console.warn("Local cart JSON parse error:", err);
+    return [];
+  }
+};
+
 const initialState = {
-  items: JSON.parse(localStorage.getItem('cymanCart')) || [],
+  items: loadLocalCart(),
 };
 
 const cartSlice = createSlice({
@@ -43,7 +57,7 @@ const cartSlice = createSlice({
     },
     setCart(state, action) {
       state.items = action.payload;
-      localStorage.setItem('cymanCart', JSON.stringify(action.payload));
+      localStorage.setItem('cymanCart', JSON.stringify(state.items));
     },
     clearCart(state) {
       state.items = [];
