@@ -42,6 +42,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('cymanCart'); // Optional if you want to clear local cart
     setIsAuthenticated(false);
     setUser(null);
   };

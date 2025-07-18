@@ -1,10 +1,10 @@
+import React, { useEffect, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import React from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-
-import { CartProvider } from './context/CartContext'; 
+import { AuthContext } from './context/AuthContext';
+import { CartContext, CartProvider } from './context/CartContext';
 
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -20,9 +20,33 @@ import RequestReset from './components/auth/RequestReset';
 import ResetPassword from './components/auth/ResetPassword';
 import AdminDashboard from './admin/AdminDashboard';
 
+const AppRoutes = () => {
+  const { isAuthenticated } = useContext(AuthContext);
+  const { setCart } = useContext(CartContext);
 
-const App = () => (
-  <CartProvider> 
+  useEffect(() => {
+    const fetchCart = async () => {
+      const token = localStorage.getItem('authToken');
+      if (!token) return;
+
+      try {
+        const res = await fetch('http://localhost:8000/api/cart/', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const cartData = await res.json();
+          setCart(cartData);
+          localStorage.setItem('cymanCart', JSON.stringify(cartData));
+        }
+      } catch (err) {
+        console.error('Failed to fetch cart:', err);
+      }
+    };
+
+    if (isAuthenticated) fetchCart();
+  }, [isAuthenticated, setCart]);
+
+  return (
     <Router>
       <Navbar />
       <Routes>
@@ -32,8 +56,6 @@ const App = () => (
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/thank-you" element={<ThankYou />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
-
-
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/register" element={<Register />} />
@@ -43,6 +65,12 @@ const App = () => (
       <Footer />
       <ToastContainer position="top-center" autoClose={4000} />
     </Router>
+  );
+};
+
+const App = () => (
+  <CartProvider>
+    <AppRoutes />
   </CartProvider>
 );
 

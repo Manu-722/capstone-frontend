@@ -63,15 +63,15 @@ const Navbar = () => {
 
       {/* 🛒 Main Navigation Bar */}
       <nav className="bg-black shadow px-6 py-3 flex justify-between items-center relative z-40">
-        <Link to="/" className="text-xl font-bold text-red-600">Cyman Wear</Link>
+        <Link to="/" className="text-xl font-bold text-red-500">Cyman Wear</Link>
 
         <div className="flex items-center gap-6">
-          <Link to="/shop" className="text-red-500 hover:text-red-600">Shop</Link>
+          <Link to="/shop" className="text-red-500 hover:text-red-500">Shop</Link>
 
-          <Link to="/cart" aria-label="Cart" className="relative text-2xl text-red-500 hover:text-red-600">
+          <Link to="/cart" aria-label="Cart" className="relative text-2xl text-red-500 hover:text-red-500">
             🛒
             {getCartItemCount() > 0 && (
-              <span className="absolute -top-2 -right-3 bg-red-600 text-white text-xs px-1 rounded-full">
+              <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs px-1 rounded-full">
                 {getCartItemCount()}
               </span>
             )}
