@@ -1,16 +1,17 @@
-import React, { useContext } from 'react';
-import { WishlistContext } from '../context/WishlistContext';
-import { CartContext } from '../context/CartContext';
+import React from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { addToCart } from '../redux/cartSlice';
+import { removeWishlistItem } from '../redux/wishlistSlice';
 import { useNavigate } from 'react-router-dom';
 
 const Wishlist = () => {
-  const { wishlist, removeFromWishlist } = useContext(WishlistContext);
-  const { addToCart } = useContext(CartContext);
+  const wishlist = useSelector((state) => state.wishlist.items);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const handleMoveToCart = (item) => {
-    addToCart(item);
-    removeFromWishlist(item.id);
+    dispatch(addToCart(item));
+    dispatch(removeWishlistItem(item.id));
     navigate('/cart');
   };
 
@@ -46,7 +47,7 @@ const Wishlist = () => {
                     Move to Cart
                   </button>
                   <button
-                    onClick={() => removeFromWishlist(item.id)}
+                    onClick={() => dispatch(removeWishlistItem(item.id))}
                     className="text-sm text-red-500 ml-2 hover:underline"
                   >
                     Remove

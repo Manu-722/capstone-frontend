@@ -1,16 +1,12 @@
-import React, { useEffect, useContext } from 'react';
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-import { AuthContext, AuthProvider } from './context/AuthContext';
-import { CartContext, CartProvider } from './context/CartContext';
-import { WishlistProvider } from './context/WishlistContext';
+import { useSelector, useDispatch, Provider } from 'react-redux';
+import store from './redux/store';
+import { fetchCartFromServer, persistCartToServer } from './redux/cartSlice';
+import { fetchWishlist } from './redux/wishlistSlice'; // 💖 Import wishlist sync
 
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -28,33 +24,30 @@ import AdminDashboard from './admin/AdminDashboard';
 import Wishlist from './pages/Wishlist';
 
 const PrivateRoute = ({ children }) => {
-  const { isAuthenticated } = useContext(AuthContext);
+  const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated);
   return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
 const AppRoutes = () => {
-  const { isAuthenticated, token } = useContext(AuthContext);
-  const { setCart } = useContext(CartContext);
+  const dispatch = useDispatch();
+  const token = useSelector((state) => state.auth?.token) || localStorage.getItem('authToken');
+  const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated);
+  const cart = useSelector((state) => state.cart.items);
 
+  // 🧠 Load cart and wishlist from Django on login
   useEffect(() => {
-    const fetchCart = async () => {
-      if (!isAuthenticated || !token) return;
-      try {
-        const res = await fetch('http://localhost:8000/api/user/cart/', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (Array.isArray(data.items)) {
-          setCart(data.items);
-          localStorage.setItem('cymanCart', JSON.stringify(data.items));
-        }
-      } catch (err) {
-        console.error('Failed to load cart:', err);
-      }
-    };
+    if (isAuthenticated && token) {
+      dispatch(fetchCartFromServer());
+      dispatch(fetchWishlist()); // 💖 Load wishlist after login
+    }
+  }, [isAuthenticated, token, dispatch]);
 
-    fetchCart();
-  }, [isAuthenticated, token]);
+  // 💾 Persist cart changes to backend
+  useEffect(() => {
+    if (isAuthenticated && token && cart.length > 0) {
+      dispatch(persistCartToServer());
+    }
+  }, [cart, isAuthenticated, token, dispatch]);
 
   return (
     <>
@@ -63,20 +56,12 @@ const AppRoutes = () => {
         <Route path="/" element={<Home />} />
         <Route path="/shop" element={<Shop />} />
         <Route path="/cart" element={<Cart />} />
-        <Route
-          path="/checkout"
-          element={
-            <PrivateRoute>
-              <Checkout />
-            </PrivateRoute>
-          }
-        />
+        <Route path="/checkout" element={<PrivateRoute><Checkout /></PrivateRoute>} />
         <Route path="/thank-you" element={<ThankYou />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/wishlist" element={<Wishlist />} />
-
         <Route path="/register" element={<Register />} />
         <Route path="/reset-password" element={<RequestReset />} />
         <Route path="/reset/:uidb64/:token" element={<ResetPassword />} />
@@ -88,15 +73,11 @@ const AppRoutes = () => {
 };
 
 const App = () => (
-  <AuthProvider>
-    <CartProvider>
-      <WishlistProvider>
-        <Router>
-          <AppRoutes />
-        </Router>
-      </WishlistProvider>
-    </CartProvider>
-  </AuthProvider>
+  <Provider store={store}>
+    <Router>
+      <AppRoutes />
+    </Router>
+  </Provider>
 );
 
 export default App;
