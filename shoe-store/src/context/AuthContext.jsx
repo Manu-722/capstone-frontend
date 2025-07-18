@@ -5,13 +5,14 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
 
-  // Fetch user profile from Django
-  const fetchUser = async (token) => {
+  // 🔐 Fetch profile from backend using JWT
+  const fetchUser = async (authToken) => {
     try {
       const res = await fetch('http://localhost:8000/api/user-profile/', {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${authToken}`,
         },
       });
       if (res.ok) {
@@ -26,29 +27,43 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 🚀 Load token and user on initial app mount
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
+    const storedToken = localStorage.getItem('authToken');
+    if (storedToken) {
       setIsAuthenticated(true);
-      fetchUser(token);
+      setToken(storedToken);
+      fetchUser(storedToken);
     }
   }, []);
 
-  const login = (token) => {
-    localStorage.setItem('authToken', token);
+  // ✳️ Handle login
+  const login = (authToken) => {
+    localStorage.setItem('authToken', authToken);
     setIsAuthenticated(true);
-    fetchUser(token);
+    setToken(authToken);
+    fetchUser(authToken);
   };
 
+  // 🔒 Handle logout
   const logout = () => {
     localStorage.removeItem('authToken');
-    localStorage.removeItem('cymanCart'); // Optional if you want to clear local cart
+    localStorage.removeItem('cymanCart'); // Optional: clear cart cache
     setIsAuthenticated(false);
+    setToken(null);
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        user,
+        login,
+        logout,
+        token, // ✅ Now available everywhere
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

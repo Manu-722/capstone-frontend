@@ -3,14 +3,14 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  useLocation,
-  useNavigate,
+  Navigate,
 } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-import { AuthContext } from './context/AuthContext';
+import { AuthContext, AuthProvider } from './context/AuthContext';
 import { CartContext, CartProvider } from './context/CartContext';
+import { WishlistProvider } from './context/WishlistContext';
 
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -25,32 +25,36 @@ import ThankYou from './pages/ThankYou';
 import RequestReset from './components/auth/RequestReset';
 import ResetPassword from './components/auth/ResetPassword';
 import AdminDashboard from './admin/AdminDashboard';
+import Wishlist from './pages/Wishlist';
+
+const PrivateRoute = ({ children }) => {
+  const { isAuthenticated } = useContext(AuthContext);
+  return isAuthenticated ? children : <Navigate to="/login" />;
+};
 
 const AppRoutes = () => {
-  const { isAuthenticated } = useContext(AuthContext);
+  const { isAuthenticated, token } = useContext(AuthContext);
   const { setCart } = useContext(CartContext);
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (!token) return;
-
     const fetchCart = async () => {
+      if (!isAuthenticated || !token) return;
       try {
-        const res = await fetch('http://localhost:8000/api/cart/', {
+        const res = await fetch('http://localhost:8000/api/user/cart/', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.ok) {
-          const cartData = await res.json();
-          setCart(cartData);
-          localStorage.setItem('cymanCart', JSON.stringify(cartData));
+        const data = await res.json();
+        if (Array.isArray(data.items)) {
+          setCart(data.items);
+          localStorage.setItem('cymanCart', JSON.stringify(data.items));
         }
       } catch (err) {
-        console.error('Failed to fetch cart:', err);
+        console.error('Failed to load cart:', err);
       }
     };
 
     fetchCart();
-  }, [isAuthenticated, setCart]);
+  }, [isAuthenticated, token]);
 
   return (
     <>
@@ -59,11 +63,20 @@ const AppRoutes = () => {
         <Route path="/" element={<Home />} />
         <Route path="/shop" element={<Shop />} />
         <Route path="/cart" element={<Cart />} />
-        <Route path="/checkout" element={<Checkout />} />
+        <Route
+          path="/checkout"
+          element={
+            <PrivateRoute>
+              <Checkout />
+            </PrivateRoute>
+          }
+        />
         <Route path="/thank-you" element={<ThankYou />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/wishlist" element={<Wishlist />} />
+
         <Route path="/register" element={<Register />} />
         <Route path="/reset-password" element={<RequestReset />} />
         <Route path="/reset/:uidb64/:token" element={<ResetPassword />} />
@@ -75,11 +88,15 @@ const AppRoutes = () => {
 };
 
 const App = () => (
-  <CartProvider>
-    <Router>
-      <AppRoutes />
-    </Router>
-  </CartProvider>
+  <AuthProvider>
+    <CartProvider>
+      <WishlistProvider>
+        <Router>
+          <AppRoutes />
+        </Router>
+      </WishlistProvider>
+    </CartProvider>
+  </AuthProvider>
 );
 
 export default App;
