@@ -1,10 +1,7 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addToCart } from '../redux/cartSlice';
-import {
-  removeWishlistItem,
-  clearWishlist,
-} from '../redux/wishlistSlice';
+import { clearWishlist, removeWishlistItem } from '../redux/wishlistSlice';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
@@ -15,8 +12,8 @@ const Wishlist = () => {
 
   const handleMoveToCart = (item) => {
     dispatch(addToCart(item));
-    dispatch(removeWishlistItem(item.id));
-    toast.success('Moved to cart 🛒');
+    dispatch(clearWishlist()); // 💥 Clears entire wishlist
+    toast.success(`"${item.name}" moved to cart 🛒`);
     navigate('/cart');
   };
 
