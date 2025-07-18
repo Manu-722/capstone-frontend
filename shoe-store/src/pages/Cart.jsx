@@ -1,9 +1,11 @@
 import React, { useContext, useState } from 'react';
 import { CartContext } from '../context/CartContext';
+import { AuthContext } from '../context/AuthContext'; // ✅ Added
 import { Link } from 'react-router-dom';
 
 const Cart = () => {
   const { cart, setCart } = useContext(CartContext);
+  const { isAuthenticated } = useContext(AuthContext); // ✅ Extract auth state
   const [paymentMethod, setPaymentMethod] = useState('mpesa');
 
   const formatKES = (amount) =>
@@ -130,16 +132,28 @@ const Cart = () => {
               </select>
             </div>
 
-            <Link
-              to={{
-                pathname: '/checkout',
-                search: `?method=${paymentMethod}`,
-              }}
-            >
-              <button className="mt-4 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">
-                Proceed to Checkout
+            {isAuthenticated ? (
+              <Link
+                to={{
+                  pathname: '/checkout',
+                  search: `?method=${paymentMethod}`,
+                }}
+              >
+                <button className="mt-4 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">
+                  Proceed to Checkout
+                </button>
+              </Link>
+            ) : (
+              <button
+                onClick={() =>
+                  alert('Please log in to proceed to checkout.')
+                }
+                className="mt-4 bg-gray-300 text-gray-600 px-6 py-2 rounded cursor-not-allowed"
+                disabled
+              >
+                Login Required to Checkout
               </button>
-            </Link>
+            )}
           </div>
         </>
       )}

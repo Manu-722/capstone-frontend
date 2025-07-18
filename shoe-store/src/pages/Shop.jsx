@@ -108,13 +108,13 @@ const Shop = () => {
               <div className="flex gap-2 mt-auto">
                 <button
                   onClick={() => handleAddToCart(item)}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded"
+                  className="flex-1 bg-red-500 hover:bg-red-700 text-white py-2 rounded"
                 >
                   Add to Cart
                 </button>
                 <button
                   onClick={() => handleAddToWishlist(item)}
-                  className="flex-1 bg-pink-500 hover:bg-pink-600 text-white py-2 rounded"
+                  className="flex-1 bg-red-500 hover:bg-red-700 text-white py-2 rounded"
                 >
                   💖 Wishlist
                 </button>
