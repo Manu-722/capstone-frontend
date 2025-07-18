@@ -1,14 +1,16 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
+// 🚀 Load wishlist from Django
 export const fetchWishlist = createAsyncThunk('wishlist/fetch', async (_, { getState }) => {
   const token = getState().auth?.token || localStorage.getItem('authToken');
   const res = await fetch('http://localhost:8000/api/wishlist/', {
     headers: { Authorization: `Bearer ${token}` },
   });
   const data = await res.json();
-  return data.items;
+  return data.items || [];
 });
 
+// ➕ Add to wishlist
 export const addWishlistItem = createAsyncThunk('wishlist/add', async (item, { getState }) => {
   const token = getState().auth?.token || localStorage.getItem('authToken');
   await fetch('http://localhost:8000/api/wishlist/add/', {
@@ -22,6 +24,7 @@ export const addWishlistItem = createAsyncThunk('wishlist/add', async (item, { g
   return item;
 });
 
+// ❌ Remove from wishlist
 export const removeWishlistItem = createAsyncThunk('wishlist/remove', async (itemId, { getState }) => {
   const token = getState().auth?.token || localStorage.getItem('authToken');
   await fetch(`http://localhost:8000/api/wishlist/remove/${itemId}/`, {
@@ -36,7 +39,11 @@ const wishlistSlice = createSlice({
   initialState: {
     items: [],
   },
-  reducers: {},
+  reducers: {
+    clearWishlist(state) {
+      state.items = [];
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchWishlist.fulfilled, (state, action) => {
@@ -51,4 +58,5 @@ const wishlistSlice = createSlice({
   },
 });
 
+export const { clearWishlist } = wishlistSlice.actions;
 export default wishlistSlice.reducer;
