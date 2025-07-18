@@ -1,7 +1,7 @@
-import React, { useContext, useState, useEffect } from 'react';
-import { CartContext } from '../context/CartContext';
-import { AuthContext } from '../context/AuthContext';
+import React, { useState, useEffect, useContext } from 'react';
+import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { CartContext } from '../context/CartContext';
 import { toast } from 'react-toastify';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -11,21 +11,24 @@ const stripePromise = loadStripe('pk_test_51Rll5GR31F13pFA0W8yyMJy7zawbfLBRIBjeG
 
 const Checkout = () => {
   const { cart, setCart } = useContext(CartContext);
-  const { isAuthenticated } = useContext(AuthContext);
+  const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated);
+  const token = useSelector((state) => state.auth?.token) || localStorage.getItem('authToken');
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      toast.info('Please login to continue to checkout.');
-      navigate('/login');
-    }
-  }, [isAuthenticated, navigate]);
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('mpesa');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast.info('Please login to continue to checkout.');
+      navigate('/login?returnTo=/checkout');
+    }
+  }, [isAuthenticated, navigate]);
+
+  if (!isAuthenticated) return null;
 
   const totalQuantity = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
   const discountRate = totalQuantity >= 2 ? 0.07 : 0;
@@ -69,7 +72,10 @@ const Checkout = () => {
     try {
       const orderRes = await fetch('http://localhost:8000/api/checkout/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
 
@@ -77,7 +83,10 @@ const Checkout = () => {
 
       const stkRes = await fetch('http://localhost:8000/api/initiate_stk_push/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ phone, amount: total }),
       });
 
@@ -159,7 +168,9 @@ const Checkout = () => {
           <h3 className="text-lg font-semibold mb-2 text-gray-800">Order Summary</h3>
           {cart.map((item, index) => (
             <div key={index} className="flex justify-between text-sm text-gray-700 mb-1">
-              <span>{item.name} × {item.quantity || 1}</span>
+              <span>
+                {item.name} × {item.quantity || 1}
+              </span>
               <span>{formatKES(getItemTotal(item))}</span>
             </div>
           ))}

@@ -1,16 +1,18 @@
 import { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
 import { CartContext } from '../context/CartContext';
-import { AuthContext } from '../context/AuthContext';
-import { useSelector } from 'react-redux'; // 💖 Wishlist badge access
+import { logout } from '../redux/authSlice'; // ✅ Dispatchable logout
 
 const Navbar = () => {
   const { cart, setCart } = useContext(CartContext);
-  const { isAuthenticated, user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const wishlistCount = useSelector((state) => state.wishlist?.items?.length || 0);
+  const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated);
+  const user = useSelector((state) => state.auth?.user);
 
   const getCartItemCount = () =>
     cart.reduce((total, item) => total + (item.quantity || 1), 0);
@@ -18,7 +20,7 @@ const Navbar = () => {
   const handleConfirmedLogout = () => {
     setCart([]);
     localStorage.removeItem('cymanCart');
-    logout();
+    dispatch(logout()); // ✅ from authSlice
     setShowLogoutConfirm(false);
     navigate('/');
   };

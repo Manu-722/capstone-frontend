@@ -1,11 +1,12 @@
 import React, { useContext, useState } from 'react';
 import { CartContext } from '../context/CartContext';
-import { AuthContext } from '../context/AuthContext'; // ✅ Added
-import { Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const Cart = () => {
   const { cart, setCart } = useContext(CartContext);
-  const { isAuthenticated } = useContext(AuthContext); // ✅ Extract auth state
+  const { isAuthenticated } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState('mpesa');
 
   const formatKES = (amount) =>
@@ -38,6 +39,14 @@ const Cart = () => {
       sum + (item.discounted ?? item.price) * (item.quantity || 1),
     0
   );
+
+  const handleCheckout = () => {
+    if (isAuthenticated) {
+      navigate(`/checkout?method=${paymentMethod}`);
+    } else {
+      navigate('/login?returnTo=/checkout');
+    }
+  };
 
   return (
     <div className="max-w-5xl mx-auto p-6">
@@ -132,28 +141,16 @@ const Cart = () => {
               </select>
             </div>
 
-            {isAuthenticated ? (
-              <Link
-                to={{
-                  pathname: '/checkout',
-                  search: `?method=${paymentMethod}`,
-                }}
-              >
-                <button className="mt-4 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">
-                  Proceed to Checkout
-                </button>
-              </Link>
-            ) : (
-              <button
-                onClick={() =>
-                  alert('Please log in to proceed to checkout.')
-                }
-                className="mt-4 bg-gray-300 text-gray-600 px-6 py-2 rounded cursor-not-allowed"
-                disabled
-              >
-                Login Required to Checkout
-              </button>
-            )}
+            <button
+              onClick={handleCheckout}
+              className={`mt-4 px-6 py-2 rounded ${
+                isAuthenticated
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-gray-300 text-gray-600 hover:bg-gray-400'
+              }`}
+            >
+              {isAuthenticated ? 'Proceed to Checkout' : 'Login to Checkout'}
+            </button>
           </div>
         </>
       )}

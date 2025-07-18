@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { CartContext } from '../context/CartContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { addWishlistItem } from '../redux/wishlistSlice';
-import { toast } from 'react-toastify'; // ✅ enable toast notifications
+import { toast } from 'react-toastify'; 
 
 const Shop = () => {
   const { cart, setCart } = useContext(CartContext);
