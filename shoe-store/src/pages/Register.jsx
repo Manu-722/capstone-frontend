@@ -1,11 +1,17 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { AuthContext } from '../context/AuthContext';
 import { toast } from 'react-toastify';
+import { fetchCartFromServer } from '../redux/cartSlice';
+import { fetchWishlist } from '../redux/wishlistSlice';
+import { setAuthenticated, setUser, setToken } from '../redux/authSlice';
 
 const Register = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
+  const dispatch = useDispatch();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -58,9 +64,28 @@ const Register = () => {
           localStorage.setItem('authToken', loginData.access);
           localStorage.setItem('refreshToken', loginData.refresh);
           localStorage.setItem('cymanUser', JSON.stringify({ name, email }));
-          login(loginData.access);
+
+          login(loginData.access); // context login if needed
+          dispatch(setToken(loginData.access));
+          dispatch(setAuthenticated(true));
+
+          // 🔁 Get profile for Redux
+          const profileRes = await fetch('http://localhost:8000/api/user-profile/', {
+            headers: { Authorization: `Bearer ${loginData.access}` },
+          });
+          if (profileRes.ok) {
+            const user = await profileRes.json();
+            dispatch(setUser(user));
+          }
+
+          // 🛒 Restore user cart and wishlist
+          dispatch(fetchCartFromServer());
+          dispatch(fetchWishlist());
+
           toast.success('Registered successfully! Redirecting...');
-          setTimeout(() => navigate('/'), 1500);
+          const params = new URLSearchParams(location.search);
+          const returnTo = params.get('returnTo') || '/';
+          setTimeout(() => navigate(returnTo), 1500);
         } else {
           toast.error('Registered, but login failed');
         }

@@ -1,11 +1,17 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { AuthContext } from '../context/AuthContext';
 import { toast } from 'react-toastify';
+import { fetchCartFromServer } from '../redux/cartSlice';
+import { fetchWishlist } from '../redux/wishlistSlice';
+import { setAuthenticated, setUser, setToken } from '../redux/authSlice';
 
 const Login = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
+  const dispatch = useDispatch();
 
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -19,7 +25,6 @@ const Login = () => {
 
   const handleLogin = async () => {
     const { username, password } = formData;
-
     if (!username || !password) {
       toast.error('Please fill in both fields');
       return;
@@ -39,9 +44,28 @@ const Login = () => {
         localStorage.setItem('authToken', data.access);
         localStorage.setItem('refreshToken', data.refresh);
         localStorage.setItem('cymanUser', JSON.stringify({ username }));
-        login(data.access);
+
+        login(data.access); // context login if needed
+        dispatch(setToken(data.access));
+        dispatch(setAuthenticated(true));
+
+        // 🔁 fetch user profile for Redux
+        const profileRes = await fetch('http://localhost:8000/api/user-profile/', {
+          headers: { Authorization: `Bearer ${data.access}` },
+        });
+        if (profileRes.ok) {
+          const user = await profileRes.json();
+          dispatch(setUser(user));
+        }
+
+        // 🛒 restore user's server-side cart and wishlist
+        dispatch(fetchCartFromServer());
+        dispatch(fetchWishlist());
+
         toast.success('Login successful! Redirecting...');
-        setTimeout(() => navigate('/'), 1500);
+        const params = new URLSearchParams(location.search);
+        const returnTo = params.get('returnTo') || '/';
+        setTimeout(() => navigate(returnTo), 1500);
       } else {
         toast.error(data.detail || 'Login failed');
       }
