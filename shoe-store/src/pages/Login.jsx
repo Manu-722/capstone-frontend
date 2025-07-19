@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { AuthContext } from '../context/AuthContext';
@@ -15,6 +15,15 @@ const Login = () => {
 
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    const savedUsername = localStorage.getItem('rememberUsername');
+    if (savedUsername) {
+      setFormData((prev) => ({ ...prev, username: savedUsername }));
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -25,6 +34,7 @@ const Login = () => {
 
   const handleLogin = async () => {
     const { username, password } = formData;
+
     if (!username || !password) {
       toast.error('Please fill in both fields');
       return;
@@ -41,15 +51,18 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
+        if (rememberMe) {
+          localStorage.setItem('rememberUsername', username);
+        } else {
+          localStorage.removeItem('rememberUsername');
+        }
+
         localStorage.setItem('authToken', data.access);
         localStorage.setItem('refreshToken', data.refresh);
-        localStorage.setItem('cymanUser', JSON.stringify({ username }));
-
-        login(data.access); // context login if needed
+        login(data.access);
         dispatch(setToken(data.access));
         dispatch(setAuthenticated(true));
 
-        // 🔁 fetch user profile for Redux
         const profileRes = await fetch('http://localhost:8000/api/user-profile/', {
           headers: { Authorization: `Bearer ${data.access}` },
         });
@@ -58,7 +71,6 @@ const Login = () => {
           dispatch(setUser(user));
         }
 
-        // 🛒 restore user's server-side cart and wishlist
         dispatch(fetchCartFromServer());
         dispatch(fetchWishlist());
 
@@ -75,6 +87,10 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = 'http://localhost:8000/accounts/google/login/?process=login';
   };
 
   return (
@@ -96,8 +112,18 @@ const Login = () => {
           placeholder="Password"
           value={formData.password}
           onChange={handleChange}
-          className="mb-6 w-full px-4 py-2 border rounded focus:ring-blue-500 focus:outline-none"
+          className="mb-4 w-full px-4 py-2 border rounded focus:ring-blue-500 focus:outline-none"
         />
+        <label className="flex items-center mb-4 text-sm text-gray-600">
+          <input
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="mr-2"
+          />
+          Remember Me
+        </label>
+
         <button
           onClick={handleLogin}
           disabled={loading}
@@ -106,6 +132,13 @@ const Login = () => {
           }`}
         >
           {loading ? 'Signing in...' : 'Login'}
+        </button>
+
+        <button
+          onClick={handleGoogleLogin}
+          className="mt-4 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded"
+        >
+          Sign in with Google
         </button>
 
         <p className="mt-6 text-sm text-center text-gray-600">

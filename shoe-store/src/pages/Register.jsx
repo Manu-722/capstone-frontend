@@ -65,11 +65,10 @@ const Register = () => {
           localStorage.setItem('refreshToken', loginData.refresh);
           localStorage.setItem('cymanUser', JSON.stringify({ name, email }));
 
-          login(loginData.access); // context login if needed
+          login(loginData.access);
           dispatch(setToken(loginData.access));
           dispatch(setAuthenticated(true));
 
-          // 🔁 Get profile for Redux
           const profileRes = await fetch('http://localhost:8000/api/user-profile/', {
             headers: { Authorization: `Bearer ${loginData.access}` },
           });
@@ -78,7 +77,6 @@ const Register = () => {
             dispatch(setUser(user));
           }
 
-          // 🛒 Restore user cart and wishlist
           dispatch(fetchCartFromServer());
           dispatch(fetchWishlist());
 
@@ -98,6 +96,10 @@ const Register = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleRegister = () => {
+    window.location.href = 'http://localhost:8000/accounts/google/login/?process=signup';
   };
 
   return (
@@ -145,6 +147,13 @@ const Register = () => {
           }`}
         >
           {loading ? 'Registering...' : 'Register'}
+        </button>
+
+        <button
+          onClick={handleGoogleRegister}
+          className="mt-4 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded"
+        >
+          Sign up with Google
         </button>
 
         <p className="mt-6 text-sm text-center text-gray-600">
