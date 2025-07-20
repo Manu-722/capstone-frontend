@@ -2,14 +2,30 @@ import React, { useEffect, useState, useContext } from 'react';
 import { CartContext } from '../context/CartContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { addWishlistItem } from '../redux/wishlistSlice';
-import { toast } from 'react-toastify'; 
+import { toast } from 'react-toastify';
 
 const Shop = () => {
   const { cart, setCart } = useContext(CartContext);
   const [shoes, setShoes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [category, setCategory] = useState('All');
   const dispatch = useDispatch();
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+
+  const categories = ['All', 'Sneakers', 'Sandals', 'Boots'];
+
+  const hardcodedPromos = [
+    {
+      id: 'promo1',
+      src: '/src/assets/slide1.jpg',
+      alt: 'New Season Promo',
+    },
+    {
+      id: 'promo2',
+      src: '/src/assets/pexels-duncanoluwaseun-186035.jpg',
+      alt: 'Cyman Exclusive Drop',
+    },
+  ];
 
   useEffect(() => {
     fetch('http://localhost:8000/api/shoes/')
@@ -49,10 +65,15 @@ const Shop = () => {
     toast.success('Saved to wishlist 💖');
   };
 
-  const filteredShoes = shoes.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredShoes = shoes.filter(item => {
+    const matchesSearch =
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesCategory = category === 'All' || item.category === category;
+
+    return matchesSearch && matchesCategory;
+  });
 
   const isNewArrival = (createdAt) => {
     const addedDate = new Date(createdAt);
@@ -71,6 +92,36 @@ const Shop = () => {
         onChange={e => setSearchTerm(e.target.value)}
         className="w-full md:w-1/2 mx-auto block mb-8 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-400"
       />
+
+      {/* Category Filter + Hardcoded Promos */}
+      <div className="mb-6">
+        <div className="flex justify-center gap-3 mb-4">
+          {categories.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setCategory(cat)}
+              className={`px-3 py-1 rounded ${
+                category === cat
+                  ? 'bg-red-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {hardcodedPromos.map(promo => (
+            <img
+              key={promo.id}
+              src={promo.src}
+              alt={promo.alt}
+              className="w-full h-40 object-cover rounded shadow-md"
+            />
+          ))}
+        </div>
+      </div>
 
       {filteredShoes.length === 0 ? (
         <p className="text-center text-gray-500">No products match your search.</p>
@@ -99,6 +150,11 @@ const Shop = () => {
                 {item.description?.length > 80
                   ? `${item.description.slice(0, 80)}...`
                   : item.description}
+              </p>
+
+              {/* 👟 Sizes Display */}
+              <p className="text-sm text-gray-700 mb-2">
+                Available sizes: {item.sizes?.join(', ') || 'Coming soon'}
               </p>
 
               <p className="text-green-700 font-bold text-md mb-3">
