@@ -7,7 +7,7 @@ export const WishlistProvider = ({ children }) => {
   const [wishlist, setWishlist] = useState([]);
   const { isAuthenticated, token } = useContext(AuthContext);
 
-  // 🚀 Fetch wishlist on login
+  //  Fetch wishlist on login
   useEffect(() => {
     const fetchWishlist = async () => {
       if (!isAuthenticated) return;
@@ -26,7 +26,7 @@ export const WishlistProvider = ({ children }) => {
     fetchWishlist();
   }, [isAuthenticated]);
 
-  // 💖 Add item
+  //  Add item
   const addToWishlist = async (item) => {
     setWishlist(prev => [...prev, item]);
     try {
@@ -43,7 +43,7 @@ export const WishlistProvider = ({ children }) => {
     }
   };
 
-  // ❌ Remove item
+  //  Remove item
   const removeFromWishlist = async (itemId) => {
     setWishlist(prev => prev.filter(i => i.id !== itemId));
     try {
