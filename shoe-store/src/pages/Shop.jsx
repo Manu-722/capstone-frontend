@@ -9,6 +9,8 @@ const Shop = () => {
   const [shoes, setShoes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [category, setCategory] = useState('All');
+  const [promoIndex, setPromoIndex] = useState(0);
+
   const dispatch = useDispatch();
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
 
@@ -17,13 +19,18 @@ const Shop = () => {
   const hardcodedPromos = [
     {
       id: 'promo1',
-      src: '/src/assets/slide1.jpg',
+      src: '/src/assets/pexels-duncanoluwaseun-186035.jpg',
       alt: 'New Season Promo',
     },
     {
       id: 'promo2',
-      src: '/src/assets/pexels-duncanoluwaseun-186035.jpg',
+      src: '/src/assets/pexels-introspectivedsgn-16094250.jpg',
       alt: 'Cyman Exclusive Drop',
+    },
+    {
+      id: 'promo3',
+      src: '/src/assets/pexels-mnzoutfits-1598505.jpg',
+      alt: 'Limited Edition Sneaker Drop',
     },
   ];
 
@@ -32,6 +39,13 @@ const Shop = () => {
       .then(res => res.json())
       .then(data => setShoes(data))
       .catch(err => console.error('Failed to load shoes:', err));
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPromoIndex((prev) => (prev + 1) % hardcodedPromos.length);
+    }, 3500);
+    return () => clearInterval(timer);
   }, []);
 
   const formatKES = (amount) =>
@@ -93,7 +107,7 @@ const Shop = () => {
         className="w-full md:w-1/2 mx-auto block mb-8 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-400"
       />
 
-      {/* Category Filter + Hardcoded Promos */}
+      {/* Category Filter + Promo Slideshow */}
       <div className="mb-6">
         <div className="flex justify-center gap-3 mb-4">
           {categories.map(cat => (
@@ -111,15 +125,15 @@ const Shop = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {hardcodedPromos.map(promo => (
-            <img
-              key={promo.id}
-              src={promo.src}
-              alt={promo.alt}
-              className="w-full h-40 object-cover rounded shadow-md"
-            />
-          ))}
+        <div className="w-full h-100 mb-4 relative">
+          <img
+            src={hardcodedPromos[promoIndex].src}
+            alt={hardcodedPromos[promoIndex].alt}
+            className="w-full h-full object-cover rounded shadow-md transition duration-500 ease-in-out"
+          />
+          <div className="absolute bottom-2 right-2 bg-white bg-opacity-80 text-sm px-2 py-1 rounded text-gray-700">
+            {hardcodedPromos[promoIndex].alt}
+          </div>
         </div>
       </div>
 
@@ -152,7 +166,6 @@ const Shop = () => {
                   : item.description}
               </p>
 
-              {/* 👟 Sizes Display */}
               <p className="text-sm text-gray-700 mb-2">
                 Available sizes: {item.sizes?.join(', ') || 'Coming soon'}
               </p>
