@@ -25,12 +25,12 @@ const Shop = () => {
     },
     {
       id: 'promo2',
-      src: '/src/assets/pexels-duncanoluwaseun-186035.jpg',
+      src: '/src/assets/pexels-pixabay-267301.jpg',
       alt: 'Cyman Exclusive Drop',
     },
     {
       id: 'promo3',
-      src: '/src/assets/pexels-sagar-ahire-688133929-18393968.jpg',
+      src: '/src/assets/pexels-nytheone-1070360.jpg',
       alt: 'Limited Edition Sneaker Drop',
     },
   ];
@@ -128,7 +128,7 @@ const Shop = () => {
         </div>
 
         {searchTerm === '' && (
-          <div className="w-full h-85 mb-4 relative">
+          <div className="w-full h-84 mb-4 relative">
             <img
               src={hardcodedPromos[promoIndex].src}
               alt={hardcodedPromos[promoIndex].alt}
