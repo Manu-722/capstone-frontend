@@ -19,17 +19,17 @@ const Shop = () => {
   const hardcodedPromos = [
     {
       id: 'promo1',
-      src: '/src/assets/pexels-duncanoluwaseun-186035.jpg',
+      src: '/src/assets/shoe1.jpg',
       alt: 'New Season Promo',
     },
     {
       id: 'promo2',
-      src: '/src/assets/pexels-introspectivedsgn-16094250.jpg',
+      src: '/src/assets/pexels-duncanoluwaseun-186035.jpg',
       alt: 'Cyman Exclusive Drop',
     },
     {
       id: 'promo3',
-      src: '/src/assets/pexels-mnzoutfits-1598505.jpg',
+      src: '/src/assets/pexels-introspectivedsgn-16094250.jpg',
       alt: 'Limited Edition Sneaker Drop',
     },
   ];
@@ -107,7 +107,7 @@ const Shop = () => {
         className="w-full md:w-1/2 mx-auto block mb-8 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-400"
       />
 
-      {/* Category Filter + Promo Slideshow */}
+      {/* Category Filter */}
       <div className="mb-6">
         <div className="flex justify-center gap-3 mb-4">
           {categories.map(cat => (
@@ -125,16 +125,19 @@ const Shop = () => {
           ))}
         </div>
 
-        <div className="w-full h-100 mb-4 relative">
-          <img
-            src={hardcodedPromos[promoIndex].src}
-            alt={hardcodedPromos[promoIndex].alt}
-            className="w-full h-full object-cover rounded shadow-md transition duration-500 ease-in-out"
-          />
-          <div className="absolute bottom-2 right-2 bg-white bg-opacity-80 text-sm px-2 py-1 rounded text-gray-700">
-            {hardcodedPromos[promoIndex].alt}
+        {/* Slideshow (hidden if searching) */}
+        {searchTerm === '' && (
+          <div className="w-full h-85 mb-4 relative">
+            <img
+              src={hardcodedPromos[promoIndex].src}
+              alt={hardcodedPromos[promoIndex].alt}
+              className="w-full h-full object-cover rounded shadow-md transition duration-500 ease-in-out"
+            />
+            <div className="absolute bottom-2 right-2 bg-white bg-opacity-80 text-sm px-2 py-1 rounded text-gray-700">
+              {hardcodedPromos[promoIndex].alt}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {filteredShoes.length === 0 ? (
