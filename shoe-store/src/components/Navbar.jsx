@@ -2,7 +2,7 @@ import { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { CartContext } from '../context/CartContext';
-import { logout } from '../redux/authSlice'; // ✅ Dispatchable logout
+import { logout } from '../redux/authSlice';
 
 const Navbar = () => {
   const { cart, setCart } = useContext(CartContext);
@@ -20,7 +20,7 @@ const Navbar = () => {
   const handleConfirmedLogout = () => {
     setCart([]);
     localStorage.removeItem('cymanCart');
-    dispatch(logout()); // ✅ from authSlice
+    dispatch(logout());
     setShowLogoutConfirm(false);
     navigate('/');
   };
@@ -82,10 +82,10 @@ const Navbar = () => {
             )}
           </Link>
 
-          {/* 💖 Wishlist Link */}
+          {/* ❤️ Wishlist Icon Only */}
           {isAuthenticated && (
-            <Link to="/wishlist" className="relative text-red-500 hover:text-red-500 text-sm">
-              Wishlist
+            <Link to="/wishlist" className="relative text-xl hover:text-red-500">
+              <span className="text-red-500">❤️</span>
               {wishlistCount > 0 && (
                 <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs px-1 rounded-full">
                   {wishlistCount}

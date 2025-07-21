@@ -10,11 +10,12 @@ const Shop = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [category, setCategory] = useState('All');
   const [promoIndex, setPromoIndex] = useState(0);
+  const [selectedSizes, setSelectedSizes] = useState({});
 
   const dispatch = useDispatch();
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
 
-  const categories = ['All', 'Sneakers', 'Sandals', 'Boots'];
+  const categories = ['All', 'Sneakers', 'Sandals', 'Boots', 'Formal'];
 
   const hardcodedPromos = [
     {
@@ -29,7 +30,7 @@ const Shop = () => {
     },
     {
       id: 'promo3',
-      src: '/src/assets/pexels-introspectivedsgn-16094250.jpg',
+      src: '/src/assets/pexels-sagar-ahire-688133929-18393968.jpg',
       alt: 'Limited Edition Sneaker Drop',
     },
   ];
@@ -56,10 +57,12 @@ const Shop = () => {
     }).format(amount);
 
   const handleAddToCart = (item) => {
-    const existing = cart.find(prod => prod.id === item.id);
+    const existing = cart.find(
+      prod => prod.id === item.id && prod.selectedSize === item.selectedSize
+    );
     if (existing) {
       const updated = cart.map(prod =>
-        prod.id === item.id
+        prod.id === item.id && prod.selectedSize === item.selectedSize
           ? { ...prod, quantity: (prod.quantity || 1) + 1 }
           : prod
       );
@@ -67,7 +70,7 @@ const Shop = () => {
     } else {
       setCart([...cart, { ...item, quantity: 1 }]);
     }
-    toast.success('Added to cart!');
+    toast.success(`Added size ${item.selectedSize} to cart!`);
   };
 
   const handleAddToWishlist = (item) => {
@@ -107,7 +110,6 @@ const Shop = () => {
         className="w-full md:w-1/2 mx-auto block mb-8 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-400"
       />
 
-      {/* Category Filter */}
       <div className="mb-6">
         <div className="flex justify-center gap-3 mb-4">
           {categories.map(cat => (
@@ -125,7 +127,6 @@ const Shop = () => {
           ))}
         </div>
 
-        {/* Slideshow (hidden if searching) */}
         {searchTerm === '' && (
           <div className="w-full h-85 mb-4 relative">
             <img
@@ -169,9 +170,26 @@ const Shop = () => {
                   : item.description}
               </p>
 
-              <p className="text-sm text-gray-700 mb-2">
-                Available sizes: {item.sizes?.join(', ') || 'Coming soon'}
-              </p>
+              <div className="mb-3 flex flex-wrap gap-2">
+                {item.sizes?.map((size) => (
+                  <button
+                    key={size}
+                    onClick={() =>
+                      setSelectedSizes((prev) => ({
+                        ...prev,
+                        [item.id]: size,
+                      }))
+                    }
+                    className={`px-2 py-1 text-sm rounded border ${
+                      selectedSizes[item.id] === size
+                        ? 'bg-red-600 text-white border-red-600'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
 
               <p className="text-green-700 font-bold text-md mb-3">
                 {formatKES(item.price)}
@@ -179,7 +197,14 @@ const Shop = () => {
 
               <div className="flex gap-2 mt-auto">
                 <button
-                  onClick={() => handleAddToCart(item)}
+                  onClick={() => {
+                    const selectedSize = selectedSizes[item.id];
+                    if (!selectedSize) {
+                      toast.info('Please select a size 👟');
+                      return;
+                    }
+                    handleAddToCart({ ...item, selectedSize });
+                  }}
                   className="flex-1 bg-red-500 hover:bg-red-700 text-white py-2 rounded"
                 >
                   Add to Cart
