@@ -9,42 +9,32 @@ const Shop = () => {
   const [shoes, setShoes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [category, setCategory] = useState('All');
+  const [gender, setGender] = useState('All');
   const [promoIndex, setPromoIndex] = useState(0);
   const [selectedSizes, setSelectedSizes] = useState({});
 
   const dispatch = useDispatch();
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
 
-  const categories = ['All', 'Sneakers', 'Sandals', 'Boots', 'Formal'];
+  const categories = ['All', 'Sneakers', 'Sandals', 'Boots', 'Formal', 'Heels'];
+  const genderFilters = ['Men', 'Ladies', 'Kids'];
 
-  const hardcodedPromos = [
-    {
-      id: 'promo1',
-      src: '/src/assets/shoe1.jpg',
-      alt: 'New Season Promo',
-    },
-    {
-      id: 'promo2',
-      src: '/src/assets/pexels-pixabay-267301.jpg',
-      alt: 'Cyman Exclusive Drop',
-    },
-    {
-      id: 'promo3',
-      src: '/src/assets/pexels-nytheone-1070360.jpg',
-      alt: 'Limited Edition Sneaker Drop',
-    },
+  const promos = [
+    { id: 'promo1', src: '/src/assets/shoe1.jpg', alt: 'New Season Promo' },
+    { id: 'promo2', src: '/src/assets/pexels-pixabay-267301.jpg', alt: 'Cyman Exclusive Drop' },
+    { id: 'promo3', src: '/src/assets/pexels-nytheone-1070360.jpg', alt: 'Limited Edition Sneaker Drop' },
   ];
 
   useEffect(() => {
     fetch('http://localhost:8000/api/shoes/')
-      .then(res => res.json())
-      .then(data => setShoes(data))
-      .catch(err => console.error('Failed to load shoes:', err));
+      .then((res) => res.json())
+      .then((data) => setShoes(data))
+      .catch((err) => console.error('Failed to load shoes:', err));
   }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setPromoIndex((prev) => (prev + 1) % hardcodedPromos.length);
+      setPromoIndex((prev) => (prev + 1) % promos.length);
     }, 3500);
     return () => clearInterval(timer);
   }, []);
@@ -58,10 +48,10 @@ const Shop = () => {
 
   const handleAddToCart = (item) => {
     const existing = cart.find(
-      prod => prod.id === item.id && prod.selectedSize === item.selectedSize
+      (prod) => prod.id === item.id && prod.selectedSize === item.selectedSize
     );
     if (existing) {
-      const updated = cart.map(prod =>
+      const updated = cart.map((prod) =>
         prod.id === item.id && prod.selectedSize === item.selectedSize
           ? { ...prod, quantity: (prod.quantity || 1) + 1 }
           : prod
@@ -82,14 +72,20 @@ const Shop = () => {
     toast.success('Saved to wishlist 💖');
   };
 
-  const filteredShoes = shoes.filter(item => {
+  const filteredShoes = shoes.filter((item) => {
     const matchesSearch =
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase());
+      item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesCategory = category === 'All' || item.category === category;
+    const matchesCategory =
+      category === 'All' ||
+      (item.category && item.category.toLowerCase() === category.toLowerCase());
 
-    return matchesSearch && matchesCategory;
+    const matchesGender =
+      gender === 'All' ||
+      (item.section && item.section.toLowerCase() === gender.toLowerCase());
+
+    return matchesSearch && matchesCategory && matchesGender;
   });
 
   const isNewArrival = (createdAt) => {
@@ -106,20 +102,18 @@ const Shop = () => {
         type="text"
         placeholder="Search products..."
         value={searchTerm}
-        onChange={e => setSearchTerm(e.target.value)}
+        onChange={(e) => setSearchTerm(e.target.value)}
         className="w-full md:w-1/2 mx-auto block mb-8 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-400"
       />
 
       <div className="mb-6">
         <div className="flex justify-center gap-3 mb-4">
-          {categories.map(cat => (
+          {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setCategory(cat)}
               className={`px-3 py-1 rounded ${
-                category === cat
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                category === cat ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
               {cat}
@@ -127,15 +121,29 @@ const Shop = () => {
           ))}
         </div>
 
+        <div className="flex justify-center gap-3 mb-4">
+          {genderFilters.map((type) => (
+            <button
+              key={type}
+              onClick={() => setGender(type)}
+              className={`px-3 py-1 rounded ${
+                gender === type ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              {type}
+            </button>
+          ))}
+        </div>
+
         {searchTerm === '' && (
-          <div className="w-full h-84 mb-4 relative">
+          <div className="w-full h-80 mb-4 relative">
             <img
-              src={hardcodedPromos[promoIndex].src}
-              alt={hardcodedPromos[promoIndex].alt}
+              src={promos[promoIndex].src}
+              alt={promos[promoIndex].alt}
               className="w-full h-full object-cover rounded shadow-md transition duration-500 ease-in-out"
             />
             <div className="absolute bottom-2 right-2 bg-white bg-opacity-80 text-sm px-2 py-1 rounded text-gray-700">
-              {hardcodedPromos[promoIndex].alt}
+              {promos[promoIndex].alt}
             </div>
           </div>
         )}
@@ -146,14 +154,9 @@ const Shop = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {filteredShoes.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white border rounded shadow hover:shadow-lg transition p-4 relative flex flex-col"
-            >
+            <div key={item.id} className="bg-white border rounded shadow hover:shadow-lg transition p-4 relative flex flex-col">
               {isNewArrival(item.created_at) && (
-                <span className="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
-                  🌟 New Arrival
-                </span>
+                <span className="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded">🌟 New Arrival</span>
               )}
 
               <img
@@ -165,9 +168,7 @@ const Shop = () => {
               <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
 
               <p className="text-sm text-gray-600 mb-2">
-                {item.description?.length > 80
-                  ? `${item.description.slice(0, 80)}...`
-                  : item.description}
+                {item.description?.length > 80 ? `${item.description.slice(0, 80)}...` : item.description}
               </p>
 
               <div className="mb-3 flex flex-wrap gap-2">
@@ -191,9 +192,7 @@ const Shop = () => {
                 ))}
               </div>
 
-              <p className="text-green-700 font-bold text-md mb-3">
-                {formatKES(item.price)}
-              </p>
+              <p className="text-green-700 font-bold text-md mb-3">{formatKES(item.price)}</p>
 
               <div className="flex gap-2 mt-auto">
                 <button
@@ -223,5 +222,4 @@ const Shop = () => {
     </div>
   );
 };
-
 export default Shop;
