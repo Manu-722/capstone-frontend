@@ -34,7 +34,6 @@ const Login = () => {
 
   const handleLogin = async () => {
     const { username, password } = formData;
-
     if (!username || !password) {
       toast.error('Please fill in both fields');
       return;
@@ -42,47 +41,37 @@ const Login = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/token/', {
+      const res = await fetch('http://localhost:8000/api/auth/login/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (response.ok) {
+      if (res.ok) {
         if (rememberMe) {
           localStorage.setItem('rememberUsername', username);
         } else {
           localStorage.removeItem('rememberUsername');
         }
 
-        localStorage.setItem('authToken', data.access);
-        localStorage.setItem('refreshToken', data.refresh);
-        login(data.access);
-        dispatch(setToken(data.access));
+        localStorage.setItem('authToken', data.token);
+        login(data.token);
+        dispatch(setToken(data.token));
         dispatch(setAuthenticated(true));
-
-        const profileRes = await fetch('http://localhost:8000/api/user-profile/', {
-          headers: { Authorization: `Bearer ${data.access}` },
-        });
-        if (profileRes.ok) {
-          const user = await profileRes.json();
-          dispatch(setUser(user));
-        }
+        dispatch(setUser({ username: data.username, email: data.email }));
 
         dispatch(fetchCartFromServer());
         dispatch(fetchWishlist());
 
         toast.success('Login successful! Redirecting...');
-        const params = new URLSearchParams(location.search);
-        const returnTo = params.get('returnTo') || '/';
+        const returnTo = new URLSearchParams(location.search).get('returnTo') || '/';
         setTimeout(() => navigate(returnTo), 1500);
       } else {
-        toast.error(data.detail || 'Login failed');
+        toast.error(data.error || 'Login failed');
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
       toast.error('Server error. Please try again.');
     } finally {
       setLoading(false);
@@ -114,6 +103,7 @@ const Login = () => {
           onChange={handleChange}
           className="mb-4 w-full px-4 py-2 border rounded focus:ring-blue-500 focus:outline-none"
         />
+
         <label className="flex items-center mb-4 text-sm text-gray-600">
           <input
             type="checkbox"
@@ -128,7 +118,7 @@ const Login = () => {
           onClick={handleLogin}
           disabled={loading}
           className={`w-full py-2 text-white font-semibold rounded transition ${
-            loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800'
+            loading ? 'bg-gray-400' : 'bg-black hover:bg-gray-800'
           }`}
         >
           {loading ? 'Signing in...' : 'Login'}
@@ -143,11 +133,16 @@ const Login = () => {
 
         <p className="mt-6 text-sm text-center text-gray-600">
           New to Cyman Wear?{' '}
-          <Link to="/register" className="text-blue-600 hover:underline">Create an account</Link>
+          <Link to="/register" className="text-blue-600 hover:underline">
+            Create an account
+          </Link>
         </p>
+
         <p className="mt-2 text-sm text-center text-gray-600">
           Forgot password?{' '}
-          <Link to="/reset-password" className="text-red-600 hover:underline">Reset it here</Link>
+          <Link to="/request-password-reset" className="text-red-600 hover:underline">
+            Reset it here
+          </Link>
         </p>
       </div>
     </div>

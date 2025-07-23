@@ -7,7 +7,7 @@ import { useSelector, useDispatch, Provider } from 'react-redux';
 import store from './redux/store';
 import { fetchCartFromServer, persistCartToServer } from './redux/cartSlice';
 import { fetchWishlist } from './redux/wishlistSlice';
-import { setUser, setAuthenticated, setToken } from './redux/authSlice'; // ✅ new
+import { setUser, setAuthenticated, setToken } from './redux/authSlice';
 
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -19,10 +19,12 @@ import Register from './pages/Register';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import ThankYou from './pages/ThankYou';
-import RequestReset from './components/auth/RequestReset';
-import ResetPassword from './components/auth/ResetPassword';
 import AdminDashboard from './admin/AdminDashboard';
 import Wishlist from './pages/Wishlist';
+
+import RequestReset from './pages/RequestReset';
+import RequestPasswordReset from './pages/RequestPasswordReset';
+import ResetPassword from './components/auth/ResetPassword';
 
 const PrivateRoute = ({ children }) => {
   const location = useLocation();
@@ -89,7 +91,8 @@ const AppRoutes = () => {
         <Route path="/signup" element={<Signup />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/reset-password" element={<RequestReset />} />
+        <Route path="/request-reset" element={<RequestReset />} />
+        <Route path="/request-password-reset" element={<RequestPasswordReset />} />
         <Route path="/reset/:uidb64/:token" element={<ResetPassword />} />
       </Routes>
       <Footer />
