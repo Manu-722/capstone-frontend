@@ -7,26 +7,16 @@ export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const { token, isAuthenticated } = useContext(AuthContext);
 
-  // 🧠 Load cart from backend on login
   useEffect(() => {
-    const fetchCart = async () => {
-      if (!isAuthenticated || !token) {
-        // Fallback to localStorage for guests
-        try {
-          const stored = localStorage.getItem('cymanCart');
-          if (stored) setCart(JSON.parse(stored));
-        } catch (err) {
-          console.error('Error loading local cart:', err);
-        }
-        return;
-      }
+    if (!token || !isAuthenticated) return;
 
+    const fetchCart = async () => {
       try {
         const res = await fetch('http://localhost:8000/api/user/cart/', {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
-        if (Array.isArray(data.items)) {
+        if (Array.isArray(data.items) && data.items.length > 0) {
           setCart(data.items);
           localStorage.setItem('cymanCart', JSON.stringify(data.items));
         }
@@ -35,15 +25,15 @@ export const CartProvider = ({ children }) => {
       }
     };
 
-    fetchCart();
-  }, [isAuthenticated, token]);
+    const timer = setTimeout(fetchCart, 200);
+    return () => clearTimeout(timer);
+  }, [token, isAuthenticated]);
 
-  // 💾 Sync cart to backend on change
   useEffect(() => {
+    if (!token || !isAuthenticated || cart.length === 0) return;
+
     const persistCart = async () => {
       localStorage.setItem('cymanCart', JSON.stringify(cart));
-      if (!isAuthenticated || !token || cart.length === 0) return;
-
       try {
         await fetch('http://localhost:8000/api/persist_cart/', {
           method: 'POST',
@@ -58,10 +48,10 @@ export const CartProvider = ({ children }) => {
       }
     };
 
-    persistCart();
-  }, [cart, isAuthenticated, token]);
+    const timer = setTimeout(persistCart, 200);
+    return () => clearTimeout(timer);
+  }, [cart, token, isAuthenticated]);
 
-  // ➕ Add to cart
   const addToCart = (product) => {
     if (!product || !product.id) return;
 

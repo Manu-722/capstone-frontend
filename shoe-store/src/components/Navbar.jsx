@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { CartContext } from '../context/CartContext';
 import { logout } from '../redux/authSlice';
+import { persistCartToServer } from '../redux/cartSlice';  // ✅ Added
 
 const Navbar = () => {
   const { cart, setCart } = useContext(CartContext);
@@ -17,7 +18,13 @@ const Navbar = () => {
   const getCartItemCount = () =>
     cart.reduce((total, item) => total + (item.quantity || 1), 0);
 
-  const handleConfirmedLogout = () => {
+  const handleConfirmedLogout = async () => {
+    try {
+      await dispatch(persistCartToServer());   // ✅ Persist cart before clearing
+    } catch (err) {
+      console.error('Cart persistence failed:', err);
+    }
+
     setCart([]);
     localStorage.removeItem('cymanCart');
     dispatch(logout());
@@ -82,7 +89,6 @@ const Navbar = () => {
             )}
           </Link>
 
-          {/* ❤️ Wishlist Icon Only */}
           {isAuthenticated && (
             <Link to="/wishlist" className="relative text-xl hover:text-red-500">
               <span className="text-red-500">❤️</span>

@@ -4,7 +4,7 @@ import { useDispatch } from 'react-redux';
 import { AuthContext } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import { fetchCartFromServer } from '../redux/cartSlice';
-import { fetchWishlist } from '../redux/wishlistSlice';
+import { fetchWishlistFromServer } from '../redux/wishlistSlice';
 import { setAuthenticated, setUser, setToken } from '../redux/authSlice';
 
 const Login = () => {
@@ -50,20 +50,27 @@ const Login = () => {
       const data = await res.json();
 
       if (res.ok) {
+        // 🎯 Remember Me
         if (rememberMe) {
           localStorage.setItem('rememberUsername', username);
         } else {
           localStorage.removeItem('rememberUsername');
         }
 
+        // 🧠 Session Tokens
         localStorage.setItem('authToken', data.token);
+        localStorage.setItem('lastUsername', data.username);
+
         login(data.token);
         dispatch(setToken(data.token));
         dispatch(setAuthenticated(true));
         dispatch(setUser({ username: data.username, email: data.email }));
 
-        dispatch(fetchCartFromServer());
-        dispatch(fetchWishlist());
+        // 🔁 Restore cart & wishlist
+        setTimeout(() => {
+          dispatch(fetchCartFromServer());
+          dispatch(fetchWishlistFromServer());
+        }, 100);
 
         toast.success('Login successful! Redirecting...');
         const returnTo = new URLSearchParams(location.search).get('returnTo') || '/';

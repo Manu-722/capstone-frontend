@@ -1,4 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { clearCart } from '../redux/cartSlice';
+import { clearWishlist } from '../redux/wishlistSlice';
 
 export const AuthContext = createContext();
 
@@ -6,18 +9,17 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
+  const dispatch = useDispatch();
 
-  // 🔐 Fetch profile from backend using JWT
   const fetchUser = async (authToken) => {
     try {
       const res = await fetch('http://localhost:8000/api/user-profile/', {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
+        headers: { Authorization: `Bearer ${authToken}` },
       });
       if (res.ok) {
         const data = await res.json();
         setUser(data);
+        localStorage.setItem('lastUsername', data.username);
       } else {
         setUser(null);
       }
@@ -27,7 +29,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // 🚀 Load token and user on initial app mount
   useEffect(() => {
     const storedToken = localStorage.getItem('authToken');
     if (storedToken) {
@@ -37,7 +38,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // ✳️ Handle login
   const login = (authToken) => {
     localStorage.setItem('authToken', authToken);
     setIsAuthenticated(true);
@@ -45,10 +45,15 @@ export const AuthProvider = ({ children }) => {
     fetchUser(authToken);
   };
 
-  // 🔒 Handle logout
   const logout = () => {
     localStorage.removeItem('authToken');
-    localStorage.removeItem('cymanCart'); // Optional: clear cart cache
+    localStorage.removeItem('cymanCart');
+    localStorage.removeItem('cymanWishlist');
+    localStorage.removeItem('lastUsername');
+
+    dispatch(clearCart());
+    dispatch(clearWishlist());
+
     setIsAuthenticated(false);
     setToken(null);
     setUser(null);
@@ -61,7 +66,7 @@ export const AuthProvider = ({ children }) => {
         user,
         login,
         logout,
-        token, // ✅ Now available everywhere
+        token,
       }}
     >
       {children}

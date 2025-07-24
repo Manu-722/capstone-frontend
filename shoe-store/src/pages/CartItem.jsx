@@ -22,11 +22,13 @@ const CartItem = ({ item, onRemove }) => {
     <div className="flex items-center justify-between bg-white shadow rounded p-4 mb-4">
       <img
         src={item.image || item.imageUrl || '/assets/shoes/default.jpg'}
-        alt={item.name}
+        alt={item.name || item.shoe}
         className="w-24 h-24 object-cover rounded mr-4"
       />
       <div className="flex-1">
-        <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
+        <h3 className="text-lg font-semibold text-gray-800">
+          {item.name || item.shoe}
+        </h3>
         {item.size && <p className="text-sm text-gray-600">Size: {item.size}</p>}
         <p className="text-sm text-gray-600">Qty: {item.quantity || 1}</p>
       </div>

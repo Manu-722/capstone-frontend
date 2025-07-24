@@ -1,13 +1,28 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import { useSelector, useDispatch, Provider } from 'react-redux';
 import store from './redux/store';
-import { fetchCartFromServer, persistCartToServer } from './redux/cartSlice';
-import { fetchWishlist } from './redux/wishlistSlice';
-import { setUser, setAuthenticated, setToken } from './redux/authSlice';
+import {
+  fetchCartFromServer,
+  persistCartToServer,
+} from './redux/cartSlice';
+import {
+  fetchWishlistFromServer,
+} from './redux/wishlistSlice';
+import {
+  setUser,
+  setAuthenticated,
+  setToken,
+} from './redux/authSlice';
 
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -29,21 +44,23 @@ import ResetPassword from './components/auth/ResetPassword';
 const PrivateRoute = ({ children }) => {
   const location = useLocation();
   const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated);
-
-  return isAuthenticated
-    ? children
-    : <Navigate to={`/login?returnTo=${location.pathname}`} replace />;
+  return isAuthenticated ? (
+    children
+  ) : (
+    <Navigate to={`/login?returnTo=${location.pathname}`} replace />
+  );
 };
 
 const AppRoutes = () => {
   const dispatch = useDispatch();
   const token = useSelector((state) => state.auth?.token);
   const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated);
+  const user = useSelector((state) => state.auth?.user);
   const cart = useSelector((state) => state.cart.items);
 
+  // Restore session from localStorage
   useEffect(() => {
     const localToken = localStorage.getItem('authToken');
-
     if (localToken && !token && !isAuthenticated) {
       fetch('http://localhost:8000/api/user-profile/', {
         headers: { Authorization: `Bearer ${localToken}` },
@@ -52,30 +69,54 @@ const AppRoutes = () => {
           if (!res.ok) throw new Error('Invalid token');
           return res.json();
         })
-        .then((user) => {
-          dispatch(setUser(user));
+        .then((userData) => {
+          dispatch(setUser(userData));
           dispatch(setToken(localToken));
           dispatch(setAuthenticated(true));
+          localStorage.setItem('lastUsername', userData.username);
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error('Session restore failed:', err);
           dispatch(setAuthenticated(false));
           dispatch(setToken(null));
         });
     }
   }, [dispatch, token, isAuthenticated]);
 
+  // Restore cart and wishlist when authenticated
   useEffect(() => {
-    if (isAuthenticated && token) {
-      dispatch(fetchCartFromServer());
-      dispatch(fetchWishlist());
-    }
-  }, [isAuthenticated, token, dispatch]);
+    if (!isAuthenticated || !token || !user?.username) return;
 
-  useEffect(() => {
-    if (isAuthenticated && token && cart.length > 0) {
-      dispatch(persistCartToServer());
+    const lastKnown = localStorage.getItem('lastUsername');
+    if (lastKnown && lastKnown !== user.username) {
+      localStorage.removeItem('cymanCart');
+      localStorage.removeItem('cymanWishlist');
+      return;
     }
-  }, [cart, isAuthenticated, token, dispatch]);
+
+    dispatch(fetchCartFromServer());
+    dispatch(fetchWishlistFromServer())
+      .unwrap()
+      .then((items) => {
+        if (Array.isArray(items) && items.length > 0) {
+          toast.success('✅ Wishlist restored');
+        }
+      })
+      .catch((err) => {
+        console.warn('Wishlist restore error:', err);
+      });
+  }, [dispatch, isAuthenticated, token, user]);
+
+  // Persist cart after changes
+  useEffect(() => {
+    if (!isAuthenticated || !token || cart.length === 0 || !user?.username) return;
+
+    const timer = setTimeout(() => {
+      dispatch(persistCartToServer());
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [cart, isAuthenticated, token, user, dispatch]);
 
   return (
     <>
@@ -84,7 +125,10 @@ const AppRoutes = () => {
         <Route path="/" element={<Home />} />
         <Route path="/shop" element={<Shop />} />
         <Route path="/cart" element={<Cart />} />
-        <Route path="/checkout" element={<PrivateRoute><Checkout /></PrivateRoute>} />
+        <Route
+          path="/checkout"
+          element={<PrivateRoute><Checkout /></PrivateRoute>}
+        />
         <Route path="/thank-you" element={<ThankYou />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/login" element={<Login />} />

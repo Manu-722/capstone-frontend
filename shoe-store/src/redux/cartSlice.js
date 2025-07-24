@@ -1,47 +1,66 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-// 🧠 Load cart from Django
-export const fetchCartFromServer = createAsyncThunk('cart/fetchCart', async (_, { getState }) => {
-  const token = getState().auth?.token || localStorage.getItem('authToken');
-  const res = await fetch('http://localhost:8000/api/user/cart/', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const data = await res.json();
-  return data.items || [];
-});
+const API_URL = 'http://localhost:8000/api';
 
-// 💾 Persist cart to Django
-export const persistCartToServer = createAsyncThunk('cart/persistCart', async (_, { getState }) => {
-  const cart = getState().cart.items;
-  const token = getState().auth?.token || localStorage.getItem('authToken');
+export const fetchCartFromServer = createAsyncThunk(
+  'cart/fetchCart',
+  async (_, { getState, rejectWithValue }) => {
+    const token = getState().auth?.token || localStorage.getItem('authToken');
+    try {
+      const res = await fetch(`${API_URL}/user/cart/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-  await fetch('http://localhost:8000/api/persist_cart/', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(cart),
-  });
-});
+      if (!res.ok) {
+        const error = await res.json();
+        return rejectWithValue(error);
+      }
+
+      const data = await res.json();
+      return Array.isArray(data.items) ? data.items : [];
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+export const persistCartToServer = createAsyncThunk(
+  'cart/persistCart',
+  async (_, { getState, rejectWithValue }) => {
+    const cart = getState().cart.items;
+    const token = getState().auth?.token || localStorage.getItem('authToken');
+    try {
+      const res = await fetch(`${API_URL}/persist_cart/`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cart),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        return rejectWithValue(error);
+      }
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
 
 const loadLocalCart = () => {
   try {
     const raw = localStorage.getItem('cymanCart');
     return raw ? JSON.parse(raw) : [];
-  } catch (err) {
-    console.warn("Failed to parse local cart:", err);
+  } catch {
     return [];
   }
 };
 
-const initialState = {
-  items: loadLocalCart(),
-};
-
 const cartSlice = createSlice({
   name: 'cart',
-  initialState,
+  initialState: { items: loadLocalCart() },
   reducers: {
     addToCart(state, action) {
       const existing = state.items.find((i) => i.id === action.payload.id);
@@ -63,8 +82,10 @@ const cartSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(fetchCartFromServer.fulfilled, (state, action) => {
-      state.items = action.payload;
-      localStorage.setItem('cymanCart', JSON.stringify(action.payload));
+      if (Array.isArray(action.payload) && action.payload.length > 0) {
+        state.items = action.payload;
+        localStorage.setItem('cymanCart', JSON.stringify(action.payload));
+      }
     });
   },
 });
