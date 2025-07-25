@@ -1,25 +1,33 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = 'http://localhost:8000/api/store';
+
+const getAccessToken = () => {
+  const raw = localStorage.getItem('authToken');
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed?.access;
+  } catch {
+    return raw || null;
+  }
+};
 
 export const fetchCartFromServer = createAsyncThunk(
   'cart/fetchCart',
-  async (_, { getState, rejectWithValue }) => {
-    const token = getState().auth?.token || localStorage.getItem('authToken');
+  async (_, { rejectWithValue }) => {
+    const token = getAccessToken();
+    if (!token) return rejectWithValue({ detail: 'Missing token' });
+
     try {
       const res = await fetch(`${API_URL}/user/cart/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!res.ok) {
-        const error = await res.json();
-        return rejectWithValue(error);
-      }
-
       const data = await res.json();
+      if (!res.ok) return rejectWithValue(data);
+
       return Array.isArray(data.items) ? data.items : [];
     } catch (err) {
-      return rejectWithValue(err.message);
+      return rejectWithValue({ detail: err.message });
     }
   }
 );
@@ -28,7 +36,9 @@ export const persistCartToServer = createAsyncThunk(
   'cart/persistCart',
   async (_, { getState, rejectWithValue }) => {
     const cart = getState().cart.items;
-    const token = getState().auth?.token || localStorage.getItem('authToken');
+    const token = getAccessToken();
+    if (!token) return rejectWithValue({ detail: 'Missing token' });
+
     try {
       const res = await fetch(`${API_URL}/persist_cart/`, {
         method: 'POST',
@@ -44,7 +54,7 @@ export const persistCartToServer = createAsyncThunk(
         return rejectWithValue(error);
       }
     } catch (err) {
-      return rejectWithValue(err.message);
+      return rejectWithValue({ detail: err.message });
     }
   }
 );
@@ -82,16 +92,17 @@ const cartSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(fetchCartFromServer.fulfilled, (state, action) => {
-      if (Array.isArray(action.payload)) {
-        state.items = action.payload;
-        localStorage.setItem('cymanCart', JSON.stringify(action.payload));
-      }
+      state.items = action.payload;
+      localStorage.setItem('cymanCart', JSON.stringify(action.payload));
+    });
+    builder.addCase(fetchCartFromServer.rejected, (_, action) => {
+      console.warn('[fetchCartFromServer] failed:', action.payload?.detail || action.payload);
     });
     builder.addCase(persistCartToServer.fulfilled, () => {
       console.log('[persistCartToServer] success');
     });
     builder.addCase(persistCartToServer.rejected, (_, action) => {
-      console.error('[persistCartToServer] failed:', action.payload);
+      console.error('[persistCartToServer] failed:', action.payload?.detail || action.payload);
     });
   },
 });
