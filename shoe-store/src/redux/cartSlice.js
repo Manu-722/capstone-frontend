@@ -82,10 +82,16 @@ const cartSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(fetchCartFromServer.fulfilled, (state, action) => {
-      if (Array.isArray(action.payload) && action.payload.length > 0) {
+      if (Array.isArray(action.payload)) {
         state.items = action.payload;
         localStorage.setItem('cymanCart', JSON.stringify(action.payload));
       }
+    });
+    builder.addCase(persistCartToServer.fulfilled, () => {
+      console.log('[persistCartToServer] success');
+    });
+    builder.addCase(persistCartToServer.rejected, (_, action) => {
+      console.error('[persistCartToServer] failed:', action.payload);
     });
   },
 });

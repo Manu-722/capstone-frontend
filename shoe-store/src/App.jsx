@@ -94,7 +94,17 @@ const AppRoutes = () => {
       return;
     }
 
-    dispatch(fetchCartFromServer());
+    dispatch(fetchCartFromServer())
+      .unwrap()
+      .then((items) => {
+        if (Array.isArray(items) && items.length > 0) {
+          toast.success('🛒 Cart restored');
+        }
+      })
+      .catch((err) => {
+        console.warn('Cart restore error:', err);
+      });
+
     dispatch(fetchWishlistFromServer())
       .unwrap()
       .then((items) => {
@@ -107,9 +117,9 @@ const AppRoutes = () => {
       });
   }, [dispatch, isAuthenticated, token, user]);
 
-  // Persist cart after changes
+  // Persist cart after changes — even when empty
   useEffect(() => {
-    if (!isAuthenticated || !token || cart.length === 0 || !user?.username) return;
+    if (!isAuthenticated || !token || !user?.username) return;
 
     const timer = setTimeout(() => {
       dispatch(persistCartToServer());
