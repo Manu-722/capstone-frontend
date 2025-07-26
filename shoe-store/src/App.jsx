@@ -23,7 +23,7 @@ import {
   setToken,
 } from './redux/authSlice';
 
-import { CartProvider } from './context/CartContext'; // ✅ Wrap the router in this
+import { CartProvider } from './context/CartContext';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -87,16 +87,17 @@ const AppRoutes = () => {
         return res.json();
       })
       .then((userData) => {
-        dispatch(setUser(userData));
-        dispatch(setToken({ access: accessToken }));
-        dispatch(setAuthenticated(true));
-        localStorage.setItem('lastUsername', userData.username);
-
         const lastKnown = localStorage.getItem('lastUsername');
         if (lastKnown && lastKnown !== userData.username) {
           localStorage.removeItem('cymanCart');
           localStorage.removeItem('cymanWishlist');
         }
+
+        localStorage.setItem('lastUsername', userData.username);
+
+        dispatch(setUser(userData));
+        dispatch(setToken({ access: accessToken }));
+        dispatch(setAuthenticated(true));
 
         dispatch(fetchCartFromServer())
           .unwrap()
@@ -167,11 +168,11 @@ const AppRoutes = () => {
 
 const App = () => (
   <Provider store={store}>
-    <CartProvider>
-      <Router>
+    <Router>
+      {/* <CartProvider> */}
         <AppRoutes />
-      </Router>
-    </CartProvider>
+      {/* </CartProvider> */}
+    </Router>
   </Provider>
 );
 

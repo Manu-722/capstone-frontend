@@ -1,32 +1,31 @@
-import { useContext, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { CartContext } from '../context/CartContext';
 import { logout } from '../redux/authSlice';
-import { persistCartToServer } from '../redux/cartSlice';  // ✅ Added
+import { persistCartToServer } from '../redux/cartSlice';
 
 const Navbar = () => {
-  const { cart, setCart } = useContext(CartContext);
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
+  const cart = useSelector((state) => state.cart.items);
   const wishlistCount = useSelector((state) => state.wishlist?.items?.length || 0);
   const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated);
   const user = useSelector((state) => state.auth?.user);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const getCartItemCount = () =>
     cart.reduce((total, item) => total + (item.quantity || 1), 0);
 
   const handleConfirmedLogout = async () => {
     try {
-      await dispatch(persistCartToServer());   // ✅ Persist cart before clearing
+      await dispatch(persistCartToServer());
     } catch (err) {
       console.error('Cart persistence failed:', err);
     }
 
-    setCart([]);
     localStorage.removeItem('cymanCart');
+    localStorage.removeItem('cymanWishlist');
+    localStorage.removeItem('lastUsername'); // ✅ Proper reset for user identity
     dispatch(logout());
     setShowLogoutConfirm(false);
     navigate('/');
@@ -41,7 +40,6 @@ const Navbar = () => {
 
   return (
     <>
-      {/* 🔒 Logout Confirmation Overlay */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-50">
           <div
@@ -73,14 +71,13 @@ const Navbar = () => {
         </div>
       )}
 
-      {/* 🛒 Main Navigation Bar */}
       <nav className="bg-black shadow px-6 py-3 flex justify-between items-center relative z-40">
         <Link to="/" className="text-xl font-bold text-red-500">Cyman Wear</Link>
 
         <div className="flex items-center gap-6">
           <Link to="/shop" className="text-red-500 hover:text-red-500">Shop</Link>
 
-          <Link to="/cart" aria-label="Cart" className="relative text-2xl text-red-500 hover:text-red-500">
+          <Link to="/cart" aria-label="Cart" title="View your cart" className="relative text-2xl text-red-500 hover:text-red-500">
             🛒
             {getCartItemCount() > 0 && (
               <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs px-1 rounded-full">

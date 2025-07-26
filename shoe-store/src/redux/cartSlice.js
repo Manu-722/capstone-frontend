@@ -1,4 +1,3 @@
-
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 const API_URL = 'http://localhost:8000/api';
@@ -113,8 +112,9 @@ export const persistCartToServer = createAsyncThunk(
 const loadLocalCart = () => {
   try {
     const raw = localStorage.getItem('cymanCart');
-    const cart = JSON.parse(raw);
-    return Array.isArray(cart) ? cart : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
@@ -153,10 +153,13 @@ const cartSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchCartFromServer.fulfilled, (state, action) => {
-        state.items = action.payload;
+        // ✅ Only set cart if local cart is empty
+        if (state.items.length === 0) {
+          state.items = action.payload;
+          localStorage.setItem('cymanCart', JSON.stringify(action.payload));
+        }
         state.status = 'succeeded';
         state.error = null;
-        localStorage.setItem('cymanCart', JSON.stringify(action.payload));
       })
       .addCase(fetchCartFromServer.rejected, (state, action) => {
         state.status = 'failed';

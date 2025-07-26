@@ -1,11 +1,13 @@
-import React, { useContext, useState } from 'react';
-import { CartContext } from '../context/CartContext';
-import { AuthContext } from '../context/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { setCart, persistCartToServer } from '../redux/cartSlice';
+import { toast } from 'react-toastify';
 
 const Cart = () => {
-  const { cart, setCart } = useContext(CartContext);
-  const { isAuthenticated } = useContext(AuthContext);
+  const cart = useSelector((state) => state.cart.items);
+  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState('mpesa');
 
@@ -16,22 +18,30 @@ const Cart = () => {
       minimumFractionDigits: 0,
     }).format(amount);
 
+  const updateCart = (updated) => {
+    console.log('Cart updated:', updated); // 🧪 Redux state debug
+    dispatch(setCart(updated));
+  };
+
   const removeItem = (id) => {
-    setCart(cart.filter(item => item.id !== id));
+    const updated = cart.filter(item => item.id !== id);
+    updateCart(updated);
   };
 
   const incrementQty = (id) => {
-    setCart(cart.map(item =>
+    const updated = cart.map(item =>
       item.id === id ? { ...item, quantity: item.quantity + 1 } : item
-    ));
+    );
+    updateCart(updated);
   };
 
   const decrementQty = (id) => {
-    setCart(cart.map(item =>
+    const updated = cart.map(item =>
       item.id === id && item.quantity > 1
         ? { ...item, quantity: item.quantity - 1 }
         : item
-    ));
+    );
+    updateCart(updated);
   };
 
   const subtotal = cart.reduce(
@@ -47,6 +57,18 @@ const Cart = () => {
       navigate('/login?returnTo=/checkout');
     }
   };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isAuthenticated) {
+        dispatch(persistCartToServer())
+          .unwrap()
+          .then(() => toast.success('🛒 Cart updated'))
+          .catch(() => toast.error('Failed to sync cart'));
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [cart, isAuthenticated, dispatch]);
 
   return (
     <div className="max-w-5xl mx-auto p-6">
@@ -67,7 +89,6 @@ const Cart = () => {
                   alt={item.shoe}
                   className="w-32 h-32 object-cover rounded"
                 />
-
                 <div className="flex-1 w-full">
                   <h3 className="text-lg font-semibold text-gray-800">{item.shoe}</h3>
                   <p className="text-sm text-gray-600 mb-2">
@@ -75,7 +96,6 @@ const Cart = () => {
                       ? `${item.description.slice(0, 60)}...`
                       : item.description}
                   </p>
-
                   <p className="text-md text-gray-800 mb-1">
                     Price:{' '}
                     {item.discounted && item.discounted < item.price ? (
@@ -97,7 +117,6 @@ const Cart = () => {
                       </span>
                     )}
                   </p>
-
                   <div className="flex gap-2 items-center mt-2">
                     <button
                       onClick={() => decrementQty(item.id)}
