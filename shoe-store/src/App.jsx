@@ -9,20 +9,21 @@ import {
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-import { useSelector, useDispatch, Provider } from 'react-redux';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import store from './redux/store';
+
 import {
   fetchCartFromServer,
   persistCartToServer,
 } from './redux/cartSlice';
-import {
-  fetchWishlistFromServer,
-} from './redux/wishlistSlice';
+import { fetchWishlistFromServer } from './redux/wishlistSlice';
 import {
   setUser,
   setAuthenticated,
   setToken,
 } from './redux/authSlice';
+
+import { CartProvider } from './context/CartContext'; // ✅ Wrap the router in this
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -44,11 +45,27 @@ import AdminDashboard from './admin/AdminDashboard';
 const PrivateRoute = ({ children }) => {
   const location = useLocation();
   const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated);
+
   return isAuthenticated ? (
     children
   ) : (
     <Navigate to={`/login?returnTo=${location.pathname}`} replace />
   );
+};
+
+const getValidAccessToken = () => {
+  try {
+    const raw = localStorage.getItem('authToken');
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    if (typeof parsed === 'object' && parsed?.access) return parsed.access;
+    if (typeof raw === 'string' && raw.length > 20 && !raw.includes('{')) return raw;
+
+    return null;
+  } catch {
+    return null;
+  }
 };
 
 const AppRoutes = () => {
@@ -57,74 +74,62 @@ const AppRoutes = () => {
   const cart = useSelector((state) => state.cart.items);
 
   useEffect(() => {
-    const raw = localStorage.getItem('authToken');
-    let parsed = null;
+    const accessToken = getValidAccessToken();
+    if (!accessToken || isAuthenticated) return;
 
-    try {
-      parsed = raw ? JSON.parse(raw) : null;
-    } catch {
-      parsed = raw ? { access: raw } : null;
-    }
-
-    const accessToken = parsed?.access;
-
-    if (accessToken && !token && !isAuthenticated) {
-      fetch('http://localhost:8000/api/auth/user-profile/', {
-        headers: { Authorization: `Bearer ${accessToken}` },
+    fetch('http://localhost:8000/api/auth/user-profile/', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((res) => {
+        if (!res.ok || res.headers.get('content-type')?.includes('text/html')) {
+          throw new Error('Invalid or HTML response');
+        }
+        return res.json();
       })
-        .then((res) => {
-          if (!res.ok) throw new Error('Invalid token');
-          return res.json();
-        })
-        .then((userData) => {
-          dispatch(setUser(userData));
-          dispatch(setToken(parsed));
-          dispatch(setAuthenticated(true));
-          localStorage.setItem('lastUsername', userData.username);
-        })
-        .catch((err) => {
-          console.error('Session restore failed:', err);
-          dispatch(setAuthenticated(false));
-          dispatch(setToken(null));
-          localStorage.removeItem('authToken');
+      .then((userData) => {
+        dispatch(setUser(userData));
+        dispatch(setToken({ access: accessToken }));
+        dispatch(setAuthenticated(true));
+        localStorage.setItem('lastUsername', userData.username);
+
+        const lastKnown = localStorage.getItem('lastUsername');
+        if (lastKnown && lastKnown !== userData.username) {
           localStorage.removeItem('cymanCart');
           localStorage.removeItem('cymanWishlist');
-        });
-    }
-  }, [dispatch, token, isAuthenticated]);
-
-  useEffect(() => {
-    if (!isAuthenticated || !token || !user?.username) return;
-
-    const lastKnown = localStorage.getItem('lastUsername');
-    if (lastKnown && lastKnown !== user.username) {
-      localStorage.removeItem('cymanCart');
-      localStorage.removeItem('cymanWishlist');
-      return;
-    }
-
-    dispatch(fetchCartFromServer())
-      .unwrap()
-      .then((items) => {
-        if (Array.isArray(items) && items.length > 0) {
-          toast.success('🛒 Cart restored');
         }
+
+        dispatch(fetchCartFromServer())
+          .unwrap()
+          .then((items) => {
+            if (Array.isArray(items) && items.length > 0) {
+              toast.success('🛒 Cart restored');
+            }
+          })
+          .catch((err) => {
+            console.warn('Cart restore error:', err?.detail || err);
+          });
+
+        dispatch(fetchWishlistFromServer())
+          .unwrap()
+          .then((items) => {
+            if (Array.isArray(items) && items.length > 0) {
+              toast.success('✅ Wishlist restored');
+            }
+          })
+          .catch((err) => {
+            console.warn('Wishlist restore error:', err?.detail || err);
+          });
       })
       .catch((err) => {
-        console.warn('Cart restore error:', err?.detail || err);
+        console.error('Session restore failed:', err);
+        dispatch(setAuthenticated(false));
+        dispatch(setToken(null));
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('cymanCart');
+        localStorage.removeItem('cymanWishlist');
+        toast.error('🔒 Session expired. Please log in again.');
       });
-
-    dispatch(fetchWishlistFromServer())
-      .unwrap()
-      .then((items) => {
-        if (Array.isArray(items) && items.length > 0) {
-          toast.success('✅ Wishlist restored');
-        }
-      })
-      .catch((err) => {
-        console.warn('Wishlist restore error:', err?.detail || err);
-      });
-  }, [dispatch, isAuthenticated, token, user]);
+  }, [dispatch, isAuthenticated]);
 
   useEffect(() => {
     if (!isAuthenticated || !token || !user?.username) return;
@@ -162,9 +167,11 @@ const AppRoutes = () => {
 
 const App = () => (
   <Provider store={store}>
-    <Router>
-      <AppRoutes />
-    </Router>
+    <CartProvider>
+      <Router>
+        <AppRoutes />
+      </Router>
+    </CartProvider>
   </Provider>
 );
 

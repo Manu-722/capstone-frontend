@@ -1,14 +1,25 @@
+
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-const API_URL = 'http://localhost:8000/api/store';
+const API_URL = 'http://localhost:8000/api';
 
 const getAccessToken = () => {
-  const raw = localStorage.getItem('authToken');
   try {
+    const raw = localStorage.getItem('authToken');
+    if (!raw) return null;
+
     const parsed = JSON.parse(raw);
-    return parsed?.access;
+    if (typeof parsed === 'object' && parsed?.access) {
+      return parsed.access;
+    }
+
+    if (typeof raw === 'string' && raw.length > 20 && !raw.includes('{')) {
+      return raw;
+    }
+
+    return null;
   } catch {
-    return raw || null;
+    return null;
   }
 };
 
@@ -16,16 +27,38 @@ export const fetchCartFromServer = createAsyncThunk(
   'cart/fetchCart',
   async (_, { rejectWithValue }) => {
     const token = getAccessToken();
-    if (!token) return rejectWithValue({ detail: 'Missing token' });
+    if (!token) return rejectWithValue({ detail: 'No valid token found' });
 
     try {
       const res = await fetch(`${API_URL}/user/cart/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
-      if (!res.ok) return rejectWithValue(data);
 
-      return Array.isArray(data.items) ? data.items : [];
+      const text = await res.text();
+      if (text.trim().startsWith('<')) {
+        console.warn('[fetchCartFromServer] Received HTML instead of JSON');
+        return rejectWithValue({ detail: 'Server returned HTML response' });
+      }
+
+      let data = {};
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        console.warn('[fetchCartFromServer] JSON parse error:', text.slice(0, 80));
+        return rejectWithValue({ detail: 'Could not parse server response' });
+      }
+
+      if (data?.code === 'token_not_valid') {
+        console.warn('[fetchCartFromServer] Token rejected by backend');
+        return rejectWithValue({ detail: 'Token not valid. Please log in again.' });
+      }
+
+      if (!Array.isArray(data.items)) {
+        console.warn('[fetchCartFromServer] Unexpected payload:', data);
+        return rejectWithValue({ detail: 'Malformed cart data' });
+      }
+
+      return data.items;
     } catch (err) {
       return rejectWithValue({ detail: err.message });
     }
@@ -37,7 +70,11 @@ export const persistCartToServer = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     const cart = getState().cart.items;
     const token = getAccessToken();
-    if (!token) return rejectWithValue({ detail: 'Missing token' });
+    if (!token) return rejectWithValue({ detail: 'No valid token found' });
+
+    if (!Array.isArray(cart) || cart.length === 0) {
+      return rejectWithValue({ detail: 'Cart is empty or invalid format' });
+    }
 
     try {
       const res = await fetch(`${API_URL}/persist_cart/`, {
@@ -49,10 +86,24 @@ export const persistCartToServer = createAsyncThunk(
         body: JSON.stringify(cart),
       });
 
-      if (!res.ok) {
-        const error = await res.json();
-        return rejectWithValue(error);
+      const text = await res.text();
+      if (text.trim().startsWith('<')) {
+        console.warn('[persistCartToServer] Server responded with HTML');
+        return rejectWithValue({ detail: 'Invalid server response format' });
       }
+
+      let result = {};
+      try {
+        result = JSON.parse(text);
+      } catch {
+        return rejectWithValue({ detail: 'Could not decode server response' });
+      }
+
+      if (!result || typeof result !== 'object') {
+        return rejectWithValue({ detail: 'Unexpected server reply' });
+      }
+
+      return result;
     } catch (err) {
       return rejectWithValue({ detail: err.message });
     }
@@ -62,7 +113,8 @@ export const persistCartToServer = createAsyncThunk(
 const loadLocalCart = () => {
   try {
     const raw = localStorage.getItem('cymanCart');
-    return raw ? JSON.parse(raw) : [];
+    const cart = JSON.parse(raw);
+    return Array.isArray(cart) ? cart : [];
   } catch {
     return [];
   }
@@ -70,7 +122,11 @@ const loadLocalCart = () => {
 
 const cartSlice = createSlice({
   name: 'cart',
-  initialState: { items: loadLocalCart() },
+  initialState: {
+    items: loadLocalCart(),
+    status: 'idle',
+    error: null,
+  },
   reducers: {
     addToCart(state, action) {
       const existing = state.items.find((i) => i.id === action.payload.id);
@@ -91,19 +147,33 @@ const cartSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(fetchCartFromServer.fulfilled, (state, action) => {
-      state.items = action.payload;
-      localStorage.setItem('cymanCart', JSON.stringify(action.payload));
-    });
-    builder.addCase(fetchCartFromServer.rejected, (_, action) => {
-      console.warn('[fetchCartFromServer] failed:', action.payload?.detail || action.payload);
-    });
-    builder.addCase(persistCartToServer.fulfilled, () => {
-      console.log('[persistCartToServer] success');
-    });
-    builder.addCase(persistCartToServer.rejected, (_, action) => {
-      console.error('[persistCartToServer] failed:', action.payload?.detail || action.payload);
-    });
+    builder
+      .addCase(fetchCartFromServer.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchCartFromServer.fulfilled, (state, action) => {
+        state.items = action.payload;
+        state.status = 'succeeded';
+        state.error = null;
+        localStorage.setItem('cymanCart', JSON.stringify(action.payload));
+      })
+      .addCase(fetchCartFromServer.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload?.detail || 'Cart fetch failed';
+      })
+      .addCase(persistCartToServer.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(persistCartToServer.fulfilled, (state) => {
+        state.status = 'succeeded';
+        state.error = null;
+      })
+      .addCase(persistCartToServer.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload?.detail || 'Cart persist failed';
+      });
   },
 });
 
