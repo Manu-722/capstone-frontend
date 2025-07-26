@@ -8,13 +8,8 @@ const getAccessToken = () => {
     if (!raw) return null;
 
     const parsed = JSON.parse(raw);
-    if (typeof parsed === 'object' && parsed?.access) {
-      return parsed.access;
-    }
-
-    if (typeof raw === 'string' && raw.length > 20 && !raw.includes('{')) {
-      return raw;
-    }
+    if (typeof parsed === 'object' && parsed?.access) return parsed.access;
+    if (typeof raw === 'string' && raw.length > 20 && !raw.includes('{')) return raw;
 
     return null;
   } catch {
@@ -32,30 +27,11 @@ export const fetchCartFromServer = createAsyncThunk(
       const res = await fetch(`${API_URL}/user/cart/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       const text = await res.text();
-      if (text.trim().startsWith('<')) {
-        console.warn('[fetchCartFromServer] Received HTML instead of JSON');
-        return rejectWithValue({ detail: 'Server returned HTML response' });
-      }
+      if (text.trim().startsWith('<')) return rejectWithValue({ detail: 'Invalid HTML response' });
 
-      let data = {};
-      try {
-        data = JSON.parse(text);
-      } catch (err) {
-        console.warn('[fetchCartFromServer] JSON parse error:', text.slice(0, 80));
-        return rejectWithValue({ detail: 'Could not parse server response' });
-      }
-
-      if (data?.code === 'token_not_valid') {
-        console.warn('[fetchCartFromServer] Token rejected by backend');
-        return rejectWithValue({ detail: 'Token not valid. Please log in again.' });
-      }
-
-      if (!Array.isArray(data.items)) {
-        console.warn('[fetchCartFromServer] Unexpected payload:', data);
-        return rejectWithValue({ detail: 'Malformed cart data' });
-      }
+      const data = JSON.parse(text);
+      if (!Array.isArray(data.items)) return rejectWithValue({ detail: 'Malformed cart data' });
 
       return data.items;
     } catch (err) {
@@ -69,11 +45,8 @@ export const persistCartToServer = createAsyncThunk(
   async (_, { getState, rejectWithValue }) => {
     const cart = getState().cart.items;
     const token = getAccessToken();
-    if (!token) return rejectWithValue({ detail: 'No valid token found' });
-
-    if (!Array.isArray(cart) || cart.length === 0) {
-      return rejectWithValue({ detail: 'Cart is empty or invalid format' });
-    }
+    if (!token || !Array.isArray(cart) || cart.length === 0)
+      return rejectWithValue({ detail: 'Invalid cart or missing token' });
 
     try {
       const res = await fetch(`${API_URL}/persist_cart/`, {
@@ -84,24 +57,7 @@ export const persistCartToServer = createAsyncThunk(
         },
         body: JSON.stringify(cart),
       });
-
-      const text = await res.text();
-      if (text.trim().startsWith('<')) {
-        console.warn('[persistCartToServer] Server responded with HTML');
-        return rejectWithValue({ detail: 'Invalid server response format' });
-      }
-
-      let result = {};
-      try {
-        result = JSON.parse(text);
-      } catch {
-        return rejectWithValue({ detail: 'Could not decode server response' });
-      }
-
-      if (!result || typeof result !== 'object') {
-        return rejectWithValue({ detail: 'Unexpected server reply' });
-      }
-
+      const result = await res.json();
       return result;
     } catch (err) {
       return rejectWithValue({ detail: err.message });
@@ -109,20 +65,10 @@ export const persistCartToServer = createAsyncThunk(
   }
 );
 
-const loadLocalCart = () => {
-  try {
-    const raw = localStorage.getItem('cymanCart');
-    const cart = JSON.parse(raw);
-    return Array.isArray(cart) ? cart : [];
-  } catch {
-    return [];
-  }
-};
-
 const cartSlice = createSlice({
   name: 'cart',
   initialState: {
-    items: loadLocalCart(),
+    items: [], // 🔒 always start empty
     status: 'idle',
     error: null,
   },
@@ -142,6 +88,8 @@ const cartSlice = createSlice({
     },
     clearCart(state) {
       state.items = [];
+      state.status = 'idle';
+      state.error = null;
       localStorage.removeItem('cymanCart');
     },
     removeFromCart(state, action) {

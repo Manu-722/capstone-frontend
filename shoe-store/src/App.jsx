@@ -15,15 +15,18 @@ import store from './redux/store';
 import {
   fetchCartFromServer,
   persistCartToServer,
+  clearCart,
+  setCart,
 } from './redux/cartSlice';
-import { fetchWishlistFromServer } from './redux/wishlistSlice';
+import {
+  fetchWishlistFromServer,
+  clearWishlist,
+} from './redux/wishlistSlice';
 import {
   setUser,
   setAuthenticated,
   setToken,
 } from './redux/authSlice';
-
-import { CartProvider } from './context/CartContext';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -42,15 +45,15 @@ import RequestPasswordReset from './pages/RequestPasswordReset';
 import ResetPassword from './components/auth/ResetPassword';
 import AdminDashboard from './admin/AdminDashboard';
 
+import { CartProvider } from './context/CartContext';
+import { AuthProvider } from './context/AuthContext';
+
 const PrivateRoute = ({ children }) => {
   const location = useLocation();
   const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated);
-
-  return isAuthenticated ? (
-    children
-  ) : (
-    <Navigate to={`/login?returnTo=${location.pathname}`} replace />
-  );
+  return isAuthenticated
+    ? children
+    : <Navigate to={`/login?returnTo=${location.pathname}`} replace />;
 };
 
 const getValidAccessToken = () => {
@@ -73,6 +76,20 @@ const AppRoutes = () => {
   const { token, isAuthenticated, user } = useSelector((state) => state.auth);
   const cart = useSelector((state) => state.cart.items);
 
+  // 💣 Flush cart/wishlist on unauthenticated boot
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    const username = localStorage.getItem('lastUsername');
+    if (!token || !username) {
+      dispatch(clearCart());
+      dispatch(clearWishlist());
+      localStorage.removeItem('cymanCart');
+      localStorage.removeItem('cymanWishlist');
+      console.log('🚫 Cleared cart & wishlist due to lack of auth');
+    }
+  }, [dispatch]);
+
+  // 🔁 Session restore on boot using localStorage token
   useEffect(() => {
     const accessToken = getValidAccessToken();
     if (!accessToken || isAuthenticated) return;
@@ -125,6 +142,8 @@ const AppRoutes = () => {
         console.error('Session restore failed:', err);
         dispatch(setAuthenticated(false));
         dispatch(setToken(null));
+        dispatch(clearCart());
+        dispatch(clearWishlist());
         localStorage.removeItem('authToken');
         localStorage.removeItem('cymanCart');
         localStorage.removeItem('cymanWishlist');
@@ -132,6 +151,28 @@ const AppRoutes = () => {
       });
   }, [dispatch, isAuthenticated]);
 
+  // 🔐 Local cart hydration for logged-in users
+  useEffect(() => {
+    const storedCart = localStorage.getItem('cymanCart');
+    if (isAuthenticated && storedCart) {
+      try {
+        const parsed = JSON.parse(storedCart);
+        if (Array.isArray(parsed)) {
+          dispatch(setCart(parsed));
+          console.log('✅ Local cart hydrated');
+        }
+      } catch (err) {
+        console.warn('❌ Cart hydration failed:', err);
+        dispatch(clearCart());
+      }
+    } else {
+      dispatch(clearCart());
+      localStorage.removeItem('cymanCart');
+      console.log('🧹 Cart flushed due to unauthenticated session');
+    }
+  }, [dispatch, isAuthenticated]);
+
+  // ⏳ Persist cart to server after auth and debounce
   useEffect(() => {
     if (!isAuthenticated || !token || !user?.username) return;
 
@@ -168,11 +209,13 @@ const AppRoutes = () => {
 
 const App = () => (
   <Provider store={store}>
-    <Router>
-      {/* <CartProvider> */}
-        <AppRoutes />
-      {/* </CartProvider> */}
-    </Router>
+    <CartProvider>
+      <AuthProvider>
+        <Router>
+          <AppRoutes />
+        </Router>
+      </AuthProvider>
+    </CartProvider>
   </Provider>
 );
 

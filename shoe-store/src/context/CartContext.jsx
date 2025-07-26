@@ -11,7 +11,7 @@ export const CartProvider = ({ children }) => {
   const addItem = (product) => dispatch(addToCart(product));
   const removeItem = (id) => dispatch(removeFromCart(id));
   const emptyCart = () => dispatch(clearCart());
-  const updateCart = (items) => dispatch(setCart(items)); // 👈 renamed to avoid ambiguity
+  const updateCart = (items) => dispatch(setCart(items));
 
   return (
     <CartContext.Provider value={{ cart, addItem, removeItem, emptyCart, setCart: updateCart }}>

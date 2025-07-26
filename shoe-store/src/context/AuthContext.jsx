@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { clearCart } from '../redux/cartSlice';
 import { clearWishlist } from '../redux/wishlistSlice';
+import { useCart } from '../context/CartContext'; // ✅ Import CartContext for runtime flush
 
 export const AuthContext = createContext();
 
@@ -10,6 +11,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const dispatch = useDispatch();
+
+  const { emptyCart } = useCart(); // ✅ Access CartContext flush
 
   const fetchUser = async (authToken) => {
     try {
@@ -46,17 +49,26 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    // 🧹 Remove persisted session
     localStorage.removeItem('authToken');
     localStorage.removeItem('cymanCart');
     localStorage.removeItem('cymanWishlist');
     localStorage.removeItem('lastUsername');
 
-    dispatch(clearCart());       // ✅ flush Redux cart
-    dispatch(clearWishlist());  // ✅ flush Redux wishlist
+    // 🚿 Flush runtime + Redux
+    emptyCart();             // ✅ CartContext flush
+    dispatch(clearCart());   // ✅ Redux cart flush
+    dispatch(clearWishlist());
 
+    // 🔓 Reset auth state
     setIsAuthenticated(false);
     setToken(null);
     setUser(null);
+
+    // 🌀 Rerender app with clean state
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 50);
   };
 
   return (
