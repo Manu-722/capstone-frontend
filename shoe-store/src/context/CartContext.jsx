@@ -1,117 +1,23 @@
-import { createContext, useState, useContext, useEffect } from 'react';
-import { AuthContext } from './AuthContext';
+import { createContext, useContext } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { addToCart, removeFromCart, clearCart, setCart } from '../redux/cartSlice';
 
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-  const [cart, setCart] = useState([]);
-  const { token, isAuthenticated } = useContext(AuthContext);
+  const cart = useSelector((state) => state.cart.items);
+  const dispatch = useDispatch();
 
-  
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setCart([]);
-      localStorage.removeItem('cymanCart');
-    }
-  }, [isAuthenticated]);
-
-  
-  useEffect(() => {
-    if (!token || !isAuthenticated) return;
-
-    const fetchCart = async () => {
-      try {
-        const res = await fetch('http://localhost:8000/api/user/cart/', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const data = await res.json();
-        if (Array.isArray(data.items)) {
-          setCart(data.items);
-          localStorage.setItem('cymanCart', JSON.stringify(data.items));
-        } else {
-          console.warn('Unexpected cart payload:', data);
-        }
-      } catch (err) {
-        console.error('Failed to fetch cart from server:', err);
-      }
-    };
-
-    const timer = setTimeout(fetchCart, 200);
-    return () => clearTimeout(timer);
-  }, [token, isAuthenticated]);
-
-  
-  useEffect(() => {
-    if (!token || !isAuthenticated || cart.length === 0) return;
-
-    const persistCart = async () => {
-      localStorage.setItem('cymanCart', JSON.stringify(cart));
-      try {
-        await fetch('http://localhost:8000/api/persist_cart/', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(cart),
-        });
-      } catch (err) {
-        console.error('Failed to persist cart:', err);
-      }
-    };
-
-    const timer = setTimeout(persistCart, 200);
-    return () => clearTimeout(timer);
-  }, [cart, token, isAuthenticated]);
-
-  
-  const addToCart = (product) => {
-    if (!product || !product.id) return;
-
-    setCart((prev) => {
-      const exists = prev.find((item) => item.id === product.id);
-      if (exists) {
-        return prev.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: (item.quantity || 1) + 1 }
-            : item
-        );
-      } else {
-        return [
-          ...prev,
-          {
-            ...product,
-            quantity: 1,
-            imageUrl: product.image || '/assets/shoes/default.jpg',
-          },
-        ];
-      }
-    });
-  };
-
-
-  const removeFromCart = (productId) => {
-    setCart((prev) => prev.filter((item) => item.id !== productId));
-  };
-
-  
-  const clearCart = () => {
-    setCart([]);
-    localStorage.removeItem('cymanCart');
-  };
+  const addItem = (product) => dispatch(addToCart(product));
+  const removeItem = (id) => dispatch(removeFromCart(id));
+  const emptyCart = () => dispatch(clearCart());
+  const updateCart = (items) => dispatch(setCart(items)); // 👈 renamed to avoid ambiguity
 
   return (
-    <CartContext.Provider
-      value={{
-        cart,
-        setCart,
-        addToCart,
-        removeFromCart,
-        clearCart,
-      }}
-    >
+    <CartContext.Provider value={{ cart, addItem, removeItem, emptyCart, setCart: updateCart }}>
       {children}
     </CartContext.Provider>
   );
 };
+
+export const useCart = () => useContext(CartContext);

@@ -51,8 +51,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('cymanWishlist');
     localStorage.removeItem('lastUsername');
 
-    dispatch(clearCart());
-    dispatch(clearWishlist());
+    dispatch(clearCart());       // ✅ flush Redux cart
+    dispatch(clearWishlist());  // ✅ flush Redux wishlist
 
     setIsAuthenticated(false);
     setToken(null);

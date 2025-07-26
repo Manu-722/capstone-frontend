@@ -112,9 +112,8 @@ export const persistCartToServer = createAsyncThunk(
 const loadLocalCart = () => {
   try {
     const raw = localStorage.getItem('cymanCart');
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    const cart = JSON.parse(raw);
+    return Array.isArray(cart) ? cart : [];
   } catch {
     return [];
   }
@@ -145,6 +144,10 @@ const cartSlice = createSlice({
       state.items = [];
       localStorage.removeItem('cymanCart');
     },
+    removeFromCart(state, action) {
+      state.items = state.items.filter((item) => item.id !== action.payload);
+      localStorage.setItem('cymanCart', JSON.stringify(state.items));
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -153,13 +156,10 @@ const cartSlice = createSlice({
         state.error = null;
       })
       .addCase(fetchCartFromServer.fulfilled, (state, action) => {
-        // ✅ Only set cart if local cart is empty
-        if (state.items.length === 0) {
-          state.items = action.payload;
-          localStorage.setItem('cymanCart', JSON.stringify(action.payload));
-        }
+        state.items = action.payload;
         state.status = 'succeeded';
         state.error = null;
+        localStorage.setItem('cymanCart', JSON.stringify(action.payload));
       })
       .addCase(fetchCartFromServer.rejected, (state, action) => {
         state.status = 'failed';
@@ -180,5 +180,5 @@ const cartSlice = createSlice({
   },
 });
 
-export const { addToCart, setCart, clearCart } = cartSlice.actions;
+export const { addToCart, setCart, clearCart, removeFromCart } = cartSlice.actions;
 export default cartSlice.reducer;
