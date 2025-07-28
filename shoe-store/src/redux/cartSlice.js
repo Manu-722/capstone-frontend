@@ -68,7 +68,7 @@ export const persistCartToServer = createAsyncThunk(
 const cartSlice = createSlice({
   name: 'cart',
   initialState: {
-    items: [], // 🔒 always start empty
+    items: [], 
     status: 'idle',
     error: null,
   },

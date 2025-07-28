@@ -1,3 +1,4 @@
+// Login.jsx
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
@@ -26,10 +27,7 @@ const Login = () => {
   }, []);
 
   const handleChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleLogin = async () => {
@@ -49,32 +47,27 @@ const Login = () => {
 
       const data = await res.json();
 
-      if (res.ok) {
-        // 🎯 Remember Me
+      if (res.ok && data.token?.access) {
         if (rememberMe) {
           localStorage.setItem('rememberUsername', username);
         } else {
           localStorage.removeItem('rememberUsername');
         }
 
-        // 🧠 Session Tokens
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('lastUsername', data.username);
+        localStorage.setItem('authToken', data.token.access);
+        localStorage.setItem('lastUsername', username);
 
-        login(data.token);
-        dispatch(setToken(data.token));
+        login(data.token.access);
+        dispatch(setToken(data.token.access));
         dispatch(setAuthenticated(true));
         dispatch(setUser({ username: data.username, email: data.email }));
 
-        // 🔁 Restore cart & wishlist
-        setTimeout(() => {
-          dispatch(fetchCartFromServer());
-          dispatch(fetchWishlistFromServer());
-        }, 100);
+        dispatch(fetchCartFromServer());
+        dispatch(fetchWishlistFromServer());
 
         toast.success('Login successful! Redirecting...');
         const returnTo = new URLSearchParams(location.search).get('returnTo') || '/';
-        setTimeout(() => navigate(returnTo), 1500);
+        setTimeout(() => navigate(returnTo), 1000);
       } else {
         toast.error(data.error || 'Login failed');
       }
@@ -93,7 +86,6 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-6">
       <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold mb-6 text-center text-blue-700">Sign In</h2>
-
         <input
           type="text"
           name="username"
@@ -110,7 +102,6 @@ const Login = () => {
           onChange={handleChange}
           className="mb-4 w-full px-4 py-2 border rounded focus:ring-blue-500 focus:outline-none"
         />
-
         <label className="flex items-center mb-4 text-sm text-gray-600">
           <input
             type="checkbox"
@@ -120,7 +111,6 @@ const Login = () => {
           />
           Remember Me
         </label>
-
         <button
           onClick={handleLogin}
           disabled={loading}
@@ -130,26 +120,19 @@ const Login = () => {
         >
           {loading ? 'Signing in...' : 'Login'}
         </button>
-
         <button
           onClick={handleGoogleLogin}
           className="mt-4 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded"
         >
           Sign in with Google
         </button>
-
         <p className="mt-6 text-sm text-center text-gray-600">
           New to Cyman Wear?{' '}
-          <Link to="/register" className="text-blue-600 hover:underline">
-            Create an account
-          </Link>
+          <Link to="/register" className="text-blue-600 hover:underline">Create an account</Link>
         </p>
-
         <p className="mt-2 text-sm text-center text-gray-600">
           Forgot password?{' '}
-          <Link to="/request-password-reset" className="text-red-600 hover:underline">
-            Reset it here
-          </Link>
+          <Link to="/request-password-reset" className="text-red-600 hover:underline">Reset it here</Link>
         </p>
       </div>
     </div>

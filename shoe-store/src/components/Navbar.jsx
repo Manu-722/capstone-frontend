@@ -13,8 +13,9 @@ const Navbar = () => {
   const dispatch = useDispatch();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const getCartItemCount = () =>
-    cart.reduce((total, item) => total + (item.quantity || 1), 0);
+  const cartCount = isAuthenticated
+    ? cart.reduce((total, item) => total + (item.quantity || 1), 0)
+    : 0;
 
   const handleConfirmedLogout = async () => {
     try {
@@ -25,7 +26,7 @@ const Navbar = () => {
 
     localStorage.removeItem('cymanCart');
     localStorage.removeItem('cymanWishlist');
-    localStorage.removeItem('lastUsername'); // ✅ Proper reset for user identity
+    localStorage.removeItem('lastUsername');
     dispatch(logout());
     setShowLogoutConfirm(false);
     navigate('/');
@@ -79,9 +80,9 @@ const Navbar = () => {
 
           <Link to="/cart" aria-label="Cart" title="View your cart" className="relative text-2xl text-red-500 hover:text-red-500">
             🛒
-            {getCartItemCount() > 0 && (
+            {isAuthenticated && cartCount > 0 && (
               <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs px-1 rounded-full">
-                {getCartItemCount()}
+                {cartCount}
               </span>
             )}
           </Link>

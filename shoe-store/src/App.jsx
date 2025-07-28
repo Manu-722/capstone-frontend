@@ -1,3 +1,4 @@
+// App.jsx
 import React, { useEffect } from 'react';
 import {
   BrowserRouter as Router,
@@ -76,20 +77,6 @@ const AppRoutes = () => {
   const { token, isAuthenticated, user } = useSelector((state) => state.auth);
   const cart = useSelector((state) => state.cart.items);
 
-  // 💣 Flush cart/wishlist on unauthenticated boot
-  useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    const username = localStorage.getItem('lastUsername');
-    if (!token || !username) {
-      dispatch(clearCart());
-      dispatch(clearWishlist());
-      localStorage.removeItem('cymanCart');
-      localStorage.removeItem('cymanWishlist');
-      console.log('🚫 Cleared cart & wishlist due to lack of auth');
-    }
-  }, [dispatch]);
-
-  // 🔁 Session restore on boot using localStorage token
   useEffect(() => {
     const accessToken = getValidAccessToken();
     if (!accessToken || isAuthenticated) return;
@@ -108,6 +95,8 @@ const AppRoutes = () => {
         if (lastKnown && lastKnown !== userData.username) {
           localStorage.removeItem('cymanCart');
           localStorage.removeItem('cymanWishlist');
+          dispatch(clearCart());
+          dispatch(clearWishlist());
         }
 
         localStorage.setItem('lastUsername', userData.username);
@@ -131,7 +120,7 @@ const AppRoutes = () => {
           .unwrap()
           .then((items) => {
             if (Array.isArray(items) && items.length > 0) {
-              toast.success('✅ Wishlist restored');
+              toast.success(' Wishlist restored');
             }
           })
           .catch((err) => {
@@ -147,11 +136,10 @@ const AppRoutes = () => {
         localStorage.removeItem('authToken');
         localStorage.removeItem('cymanCart');
         localStorage.removeItem('cymanWishlist');
-        toast.error('🔒 Session expired. Please log in again.');
+        toast.error(' Session expired. Please log in again.');
       });
   }, [dispatch, isAuthenticated]);
 
-  // 🔐 Local cart hydration for logged-in users
   useEffect(() => {
     const storedCart = localStorage.getItem('cymanCart');
     if (isAuthenticated && storedCart) {
@@ -159,20 +147,15 @@ const AppRoutes = () => {
         const parsed = JSON.parse(storedCart);
         if (Array.isArray(parsed)) {
           dispatch(setCart(parsed));
-          console.log('✅ Local cart hydrated');
+          console.log(' Local cart hydrated');
         }
       } catch (err) {
-        console.warn('❌ Cart hydration failed:', err);
+        console.warn(' Cart hydration failed:', err);
         dispatch(clearCart());
       }
-    } else {
-      dispatch(clearCart());
-      localStorage.removeItem('cymanCart');
-      console.log('🧹 Cart flushed due to unauthenticated session');
     }
   }, [dispatch, isAuthenticated]);
 
-  // ⏳ Persist cart to server after auth and debounce
   useEffect(() => {
     if (!isAuthenticated || !token || !user?.username) return;
 

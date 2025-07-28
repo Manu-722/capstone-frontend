@@ -1,8 +1,9 @@
+// AuthContext.jsx
 import React, { createContext, useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { clearCart } from '../redux/cartSlice';
 import { clearWishlist } from '../redux/wishlistSlice';
-import { useCart } from '../context/CartContext'; // ✅ Import CartContext for runtime flush
+import { useCart } from '../context/CartContext';
 
 export const AuthContext = createContext();
 
@@ -11,61 +12,56 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const dispatch = useDispatch();
+  const { emptyCart } = useCart();
 
-  const { emptyCart } = useCart(); // ✅ Access CartContext flush
-
-  const fetchUser = async (authToken) => {
+  const fetchUser = async (accessToken) => {
     try {
       const res = await fetch('http://localhost:8000/api/user-profile/', {
-        headers: { Authorization: `Bearer ${authToken}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) {
         const data = await res.json();
         setUser(data);
+        setIsAuthenticated(true);
+        setToken(accessToken);
         localStorage.setItem('lastUsername', data.username);
       } else {
-        setUser(null);
+        throw new Error('Unauthorized');
       }
     } catch (err) {
-      console.error('Failed to fetch user profile:', err);
-      setUser(null);
+      console.warn('User fetch failed:', err);
+      logout(); // Flush everything on failed auth
     }
   };
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('authToken');
-    if (storedToken) {
-      setIsAuthenticated(true);
-      setToken(storedToken);
-      fetchUser(storedToken);
+    const accessToken = localStorage.getItem('authToken');
+    if (accessToken) {
+      fetchUser(accessToken);
     }
   }, []);
 
-  const login = (authToken) => {
-    localStorage.setItem('authToken', authToken);
+  const login = (accessToken) => {
+    localStorage.setItem('authToken', accessToken);
     setIsAuthenticated(true);
-    setToken(authToken);
-    fetchUser(authToken);
+    setToken(accessToken);
+    fetchUser(accessToken);
   };
 
   const logout = () => {
-    // 🧹 Remove persisted session
     localStorage.removeItem('authToken');
     localStorage.removeItem('cymanCart');
     localStorage.removeItem('cymanWishlist');
     localStorage.removeItem('lastUsername');
 
-    // 🚿 Flush runtime + Redux
-    emptyCart();             // ✅ CartContext flush
-    dispatch(clearCart());   // ✅ Redux cart flush
+    emptyCart();
+    dispatch(clearCart());
     dispatch(clearWishlist());
 
-    // 🔓 Reset auth state
     setIsAuthenticated(false);
     setToken(null);
     setUser(null);
 
-    // 🌀 Rerender app with clean state
     setTimeout(() => {
       window.location.href = '/';
     }, 50);
