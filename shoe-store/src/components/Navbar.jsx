@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../redux/authSlice';
+import { logoutUser } from '../redux/authSlice';
 import { persistCartToServer } from '../redux/cartSlice';
 
 const Navbar = () => {
@@ -27,7 +27,7 @@ const Navbar = () => {
     localStorage.removeItem('cymanCart');
     localStorage.removeItem('cymanWishlist');
     localStorage.removeItem('lastUsername');
-    dispatch(logout());
+    dispatch(logoutUser());
     setShowLogoutConfirm(false);
     navigate('/');
   };
@@ -100,7 +100,9 @@ const Navbar = () => {
 
           {isAuthenticated && user ? (
             <>
-              <span className="text-sm text-gray-200">Welcome, {user.username}</span>
+              <span className="text-sm text-gray-200">
+                Welcome, {user?.username || user?.email?.split('@')[0] || 'Guest'}
+              </span>
               <button
                 onClick={() => setShowLogoutConfirm(true)}
                 className="text-red-500 hover:underline text-sm"

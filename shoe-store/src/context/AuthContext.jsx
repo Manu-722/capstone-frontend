@@ -1,9 +1,9 @@
-// AuthContext.jsx
 import React, { createContext, useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { clearCart } from '../redux/cartSlice';
 import { clearWishlist } from '../redux/wishlistSlice';
 import { useCart } from '../context/CartContext';
+import { startAuthListener } from '../sessionListener'; // 🛡️ Import listener safely
 
 export const AuthContext = createContext();
 
@@ -39,6 +39,14 @@ export const AuthProvider = ({ children }) => {
     if (accessToken) {
       fetchUser(accessToken);
     }
+
+    // 🧼 Optional unsubscribe cleanup for future listener logic
+    const unsubscribe = startAuthListener?.(() => logout());
+    return () => {
+      if (unsubscribe && typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, []);
 
   const login = (accessToken) => {

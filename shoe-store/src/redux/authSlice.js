@@ -1,37 +1,81 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import {
+  signInWithEmailAndPassword,
+  setPersistence,
+  browserLocalPersistence,
+} from 'firebase/auth';
+import { auth } from '../firebase';
+
+export const loginUser = createAsyncThunk(
+  'auth/loginUser',
+  async ({ email, password }, { rejectWithValue }) => {
+    try {
+      await setPersistence(auth, browserLocalPersistence);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const { user } = userCredential;
+      const token = await user.getIdToken();
+      return {
+        uid: user.uid,
+        email: user.email,
+        token,
+        displayName: user.displayName, // ✅ added for navbar greeting
+      };
+    } catch (err) {
+      const msg = err?.code?.split('/')[1]?.replace(/-/g, ' ') || 'Unknown error';
+      return rejectWithValue(msg);
+    }
+  }
+);
 
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    token: null,
-    isAuthenticated: false,
     user: null,
+    isAuthenticated: false, // ✅ new
+    status: 'idle',
+    error: null,
   },
   reducers: {
-    login(state, action) {
-      state.token = action.payload.token;
-      state.user = action.payload.user || null;
-      state.isAuthenticated = true;
-      localStorage.setItem('authToken', action.payload.token);
-    },
-    logout(state) {
-      state.token = null;
-      state.isAuthenticated = false;
+    logoutUser: (state) => {
       state.user = null;
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('cymanCart');
+      state.isAuthenticated = false; // ✅ new
+      state.status = 'idle';
+      state.error = null;
     },
-    setUser(state, action) {
+    setToken: (state, action) => {
+      if (!state.user) state.user = {};
+      state.user.token = action.payload;
+    },
+    setAuthenticated: (state, action) => {
+      state.isAuthenticated = action.payload; // ✅ simplified
+    },
+    setUser: (state, action) => {
       state.user = action.payload;
     },
-    setAuthenticated(state, action) {
-      state.isAuthenticated = action.payload;
-    },
-    setToken(state, action) {
-      state.token = action.payload;
-    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(loginUser.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.user = action.payload;
+        state.isAuthenticated = true; // ✅ new
+        state.status = 'succeeded';
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload;
+      });
   },
 });
 
-export const { login, logout, setUser, setAuthenticated, setToken } = authSlice.actions;
+export const {
+  logoutUser,
+  setToken,
+  setAuthenticated,
+  setUser,
+} = authSlice.actions;
+
 export default authSlice.reducer;
