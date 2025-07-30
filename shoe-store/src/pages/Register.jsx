@@ -1,16 +1,21 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react';
 import { toast } from 'react-toastify';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { createUserWithEmailAndPassword, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { auth } from '../firebase';
+import { setUser, setToken, setAuthenticated } from '../redux/authSlice';
 
 const Register = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    username: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
   const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -19,65 +24,68 @@ const Register = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    const { username, email, password, confirmPassword } = formData;
+    const email = formData.email.trim();
+    const password = formData.password.trim();
+    const confirmPassword = formData.confirmPassword.trim();
 
-    if (!username || !password) {
-      toast.error('Username and password are required');
+    if (!email || !password || !confirmPassword) {
+      toast.error('All fields are required');
       return;
     }
 
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error('Passwords must match');
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/auth/register/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password }),
-      });
+      await setPersistence(auth, browserLocalPersistence);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-      const data = await res.json();
+      const token = await user.getIdToken();
+      const displayName = email.split('@')[0];
 
-      if (res.ok) {
-        toast.success('Registration successful 🎉');
-        localStorage.setItem('rememberUsername', username);
-        setTimeout(() => navigate('/login'), 1500);
-      } else {
-        toast.error(data.error || 'Registration failed');
-      }
-    } catch {
-      toast.error('Server error. Please try again.');
+      dispatch(setUser({
+        username: displayName,
+        email: user.email,
+        isAuthenticated: true,
+        token,
+      }));
+      dispatch(setAuthenticated(true));
+      dispatch(setToken(token));
+
+      localStorage.setItem('authToken', JSON.stringify({ access: token }));
+      localStorage.setItem('lastUsername', displayName);
+
+      toast.success('Registration successful!');
+      setTimeout(() => navigate('/'), 1000);
+    } catch (error) {
+      const friendly = error.code === 'auth/email-already-in-use'
+        ? 'That email is already registered'
+        : error.message || 'Registration failed';
+      toast.error(friendly);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-6">
-      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Create Your Account</h2>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            name="username"
-            placeholder="Username"
-            value={formData.username}
-            onChange={handleChange}
-            required
-            className="mb-4 w-full px-4 py-2 border rounded focus:outline-none focus:ring"
-          />
+    <div className="min-h-screen flex items-center justify-center bg-white px-6">
+      <div className="bg-white border border-red-500 p-8 rounded shadow-md w-full max-w-md text-red-700">
+        <h2 className="text-2xl font-bold mb-6 text-center">Create an Account</h2>
+        <form onSubmit={handleRegister}>
           <input
             type="email"
             name="email"
-            placeholder="Email (optional)"
+            placeholder="Email"
             value={formData.email}
             onChange={handleChange}
-            className="mb-4 w-full px-4 py-2 border rounded focus:outline-none focus:ring"
+            required
+            className="mb-4 w-full px-4 py-2 border rounded"
           />
           <input
             type="password"
@@ -86,7 +94,7 @@ const Register = () => {
             value={formData.password}
             onChange={handleChange}
             required
-            className="mb-4 w-full px-4 py-2 border rounded focus:outline-none focus:ring"
+            className="mb-4 w-full px-4 py-2 border rounded"
           />
           <input
             type="password"
@@ -95,25 +103,18 @@ const Register = () => {
             value={formData.confirmPassword}
             onChange={handleChange}
             required
-            className="mb-4 w-full px-4 py-2 border rounded focus:outline-none focus:ring"
+            className="mb-6 w-full px-4 py-2 border rounded"
           />
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-2 text-white font-semibold rounded transition ${
-              loading ? 'bg-gray-400' : 'bg-black hover:bg-gray-800'
+            className={`w-full py-2 font-semibold rounded transition ${
+              loading ? 'bg-red-300 text-white' : 'bg-red-600 hover:bg-red-700 text-white'
             }`}
           >
-            {loading ? 'Creating account...' : 'Register'}
+            {loading ? 'Creating Account...' : 'Register'}
           </button>
         </form>
-
-        <p className="mt-6 text-sm text-center text-gray-600">
-          Already have an account?{' '}
-          <Link to="/login" className="text-blue-600 hover:underline">
-            Sign in
-          </Link>
-        </p>
       </div>
     </div>
   );

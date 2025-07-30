@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { useDispatch } from 'react-redux';
+import { setAuthenticated, setUser, setToken } from '../redux/authSlice';
 
 const RequestReset = () => {
   const [identifier, setIdentifier] = useState('');
@@ -10,6 +12,7 @@ const RequestReset = () => {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleReset = async (e) => {
     e.preventDefault();
@@ -36,6 +39,14 @@ const RequestReset = () => {
 
       if (res.ok) {
         toast.success('Credentials updated. Check your email ✉️');
+
+        // 🧼 Session hygiene: flush all auth state
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('lastUsername');
+        dispatch(setAuthenticated(false));
+        dispatch(setUser({}));
+        dispatch(setToken(null));
+
         setTimeout(() => navigate('/login'), 2000);
       } else {
         toast.error(data.error || 'Reset failed');
@@ -52,11 +63,45 @@ const RequestReset = () => {
       <div className="bg-white border border-red-500 p-8 rounded shadow-md w-full max-w-md text-center text-red-700">
         <h2 className="text-2xl font-bold mb-4">Secure Your Account</h2>
         <form onSubmit={handleReset}>
-          <input type="text" placeholder="Previous username or email" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required className="mb-4 w-full px-4 py-2 border rounded text-red-700" />
-          <input type="text" placeholder="New username" value={username} onChange={(e) => setUsername(e.target.value)} required className="mb-4 w-full px-4 py-2 border rounded text-red-700" />
-          <input type="password" placeholder="New password" value={password} onChange={(e) => setPassword(e.target.value)} required className="mb-4 w-full px-4 py-2 border rounded text-red-700" />
-          <input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="mb-6 w-full px-4 py-2 border rounded text-red-700" />
-          <button type="submit" disabled={loading} className={`w-full py-2 font-semibold rounded transition ${loading ? 'bg-red-300 text-white' : 'bg-red-600 hover:bg-red-700 text-white'}`}>
+          <input
+            type="text"
+            placeholder="Previous username or email"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            required
+            className="mb-4 w-full px-4 py-2 border rounded text-red-700"
+          />
+          <input
+            type="text"
+            placeholder="New username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            className="mb-4 w-full px-4 py-2 border rounded text-red-700"
+          />
+          <input
+            type="password"
+            placeholder="New password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="mb-4 w-full px-4 py-2 border rounded text-red-700"
+          />
+          <input
+            type="password"
+            placeholder="Confirm password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            className="mb-6 w-full px-4 py-2 border rounded text-red-700"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full py-2 font-semibold rounded transition ${
+              loading ? 'bg-red-300 text-white' : 'bg-red-600 hover:bg-red-700 text-white'
+            }`}
+          >
             {loading ? 'Processing...' : 'Reset via Email'}
           </button>
         </form>

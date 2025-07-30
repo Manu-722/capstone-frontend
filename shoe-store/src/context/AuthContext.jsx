@@ -3,9 +3,10 @@ import { useDispatch } from 'react-redux';
 import { clearCart } from '../redux/cartSlice';
 import { clearWishlist } from '../redux/wishlistSlice';
 import { useCart } from '../context/CartContext';
-import { startAuthListener } from '../sessionListener'; // 🛡️ Import listener safely
+import { startAuthListener } from '../sessionListener'; 
 
 export const AuthContext = createContext();
+
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -30,7 +31,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (err) {
       console.warn('User fetch failed:', err);
-      logout(); // Flush everything on failed auth
+      logout(); 
     }
   };
 
@@ -40,7 +41,7 @@ export const AuthProvider = ({ children }) => {
       fetchUser(accessToken);
     }
 
-    // 🧼 Optional unsubscribe cleanup for future listener logic
+    
     const unsubscribe = startAuthListener?.(() => logout());
     return () => {
       if (unsubscribe && typeof unsubscribe === 'function') {
