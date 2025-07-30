@@ -42,11 +42,11 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Register from './pages/Register';
 // import RequestReset from './pages/RequestReset';
-// import RequestPasswordReset from './pages/RequestPasswordReset';
+import RequestPasswordReset from './pages/RequestPasswordReset';
 // import ResetPassword from './components/auth/ResetPassword';
 import AdminDashboard from './admin/AdminDashboard';
-import PasswordReset from './components/PasswordReset';
-
+// import PasswordReset from './components/PasswordReset';
+import ResetPassword from './pages/ResetPassword'; 
 
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
@@ -183,11 +183,12 @@ const AppRoutes = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/wishlist" element={<Wishlist />} />
         {/* <Route path="/request-reset" element={<RequestReset />} /> */}
-        {/* <Route path="/request-password-reset" element={<RequestPasswordReset />} /> */}
+        <Route path="/request-password-reset" element={<RequestPasswordReset />} /> 
+        <Route path="/reset" element={<ResetPassword />} />
         {/* <Route path="/reset/:uidb64/:token" element={<ResetPassword />} /> */}
-        <Route path="/request-password-reset" element={<PasswordReset />} />
+        {/* <Route path="/request-password-reset" element={<PasswordReset />} /> */}
 
-      </Routes>
+      </Routes>  
       <Footer />
       <ToastContainer position="top-center" autoClose={4000} />
     </>

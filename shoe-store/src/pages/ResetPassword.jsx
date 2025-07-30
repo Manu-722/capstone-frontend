@@ -1,22 +1,22 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { confirmPasswordReset } from 'firebase/auth';
 import { useParams, useNavigate } from 'react-router-dom';
+import { auth } from '../firebase';
 import { toast } from 'react-toastify';
 
 const ResetPassword = () => {
-  const { uidb64, token } = useParams();
+  const { oobCode } = useParams(); // Firebase sends this in the URL
+  const navigate = useNavigate();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   const handleReset = async (e) => {
     e.preventDefault();
-
     if (!newPassword || !confirmPassword) {
-      toast.error('Please fill in both fields');
+      toast.error('Please fill in all fields');
       return;
     }
-
     if (newPassword !== confirmPassword) {
       toast.error('Passwords do not match');
       return;
@@ -24,34 +24,45 @@ const ResetPassword = () => {
 
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/auth/reset/${uidb64}/${token}/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: newPassword }),
-      });
-
-      if (res.ok) {
-        toast.success('Password changed successfully! 🎉');
-        setTimeout(() => navigate('/login'), 2000);
-      } else {
-        toast.error('Reset link is invalid or expired');
-      }
-    } catch {
-      toast.error('Server error. Try again later.');
+      await confirmPasswordReset(auth, oobCode, newPassword);
+      toast.success('✅ Password updated successfully!');
+      setTimeout(() => navigate('/login'), 2000);
+    } catch (error) {
+      toast.error(error.message || 'Reset failed');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-6">
-      <div className="bg-white border border-blue-500 p-8 rounded shadow-md w-full max-w-md text-center text-blue-700">
-        <h2 className="text-2xl font-bold mb-4">Set New Password</h2>
-        <form onSubmit={handleReset}>
-          <input type="password" placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required className="mb-4 w-full px-4 py-2 border rounded text-blue-700" />
-          <input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="mb-6 w-full px-4 py-2 border rounded text-blue-700" />
-          <button type="submit" disabled={loading} className={`w-full py-2 font-semibold rounded transition ${loading ? 'bg-blue-300 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>
-            {loading ? 'Submitting...' : 'Change My Password'}
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-6">
+      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-6 text-center text-blue-700">Set New Password</h2>
+        <form onSubmit={handleReset} className="flex flex-col">
+          <input
+            type="password"
+            placeholder="New password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            disabled={loading}
+            className="mb-4 px-4 py-2 border rounded focus:ring-blue-500 focus:outline-none"
+          />
+          <input
+            type="password"
+            placeholder="Confirm password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            disabled={loading}
+            className="mb-4 px-4 py-2 border rounded focus:ring-blue-500 focus:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className={`py-2 text-white font-semibold rounded ${
+              loading ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'
+            }`}
+          >
+            {loading ? 'Resetting...' : 'Reset Password'}
           </button>
         </form>
       </div>
