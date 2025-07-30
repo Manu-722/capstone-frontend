@@ -2,7 +2,13 @@ import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { createUserWithEmailAndPassword, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  setPersistence,
+  browserLocalPersistence,
+  sendEmailVerification,
+  updateProfile,
+} from 'firebase/auth';
 import { auth } from '../firebase';
 import { setUser, setToken, setAuthenticated } from '../redux/authSlice';
 
@@ -46,8 +52,11 @@ const Register = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      const token = await user.getIdToken();
       const displayName = email.split('@')[0];
+      await updateProfile(user, { displayName });
+      await sendEmailVerification(user);
+
+      const token = await user.getIdToken();
 
       dispatch(setUser({
         username: displayName,
@@ -61,12 +70,14 @@ const Register = () => {
       localStorage.setItem('authToken', JSON.stringify({ access: token }));
       localStorage.setItem('lastUsername', displayName);
 
-      toast.success('Registration successful!');
+      toast.success('Registration successful! Please verify your email.');
       setTimeout(() => navigate('/'), 1000);
     } catch (error) {
-      const friendly = error.code === 'auth/email-already-in-use'
-        ? 'That email is already registered'
-        : error.message || 'Registration failed';
+      const friendly = {
+        'auth/email-already-in-use': 'That email is already registered',
+        'auth/invalid-email': 'Invalid email format',
+        'auth/weak-password': 'Password should be at least 6 characters',
+      }[error.code] || error.message || 'Registration failed';
       toast.error(friendly);
     } finally {
       setLoading(false);
